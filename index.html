@@ -147,8 +147,10 @@
       .gradient-target.is-active { background: white; color: var(--ink); box-shadow: 0 1px 3px rgba(25,30,29,.1); }
       .random-gradient { flex: 0 0 auto; min-height: 34px; padding: .45rem .65rem; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--ink); font-size: .72rem; font-weight: 750; }
       .random-gradient:hover { border-color: var(--accent); color: var(--accent-dark); }
-      .preview-swap-notice { position: absolute; z-index: 5; top: 12px; left: 50%; display: flex; align-items: center; gap: 9px; padding: 7px 8px 7px 12px; border-radius: 99px; background: rgba(24,27,27,.78); color: white; font-size: .72rem; font-weight: 750; line-height: 1; white-space: nowrap; transform: translateX(-50%); box-shadow: 0 4px 18px rgba(0,0,0,.16); }
-      .preview-swap-notice button { min-height: 26px; padding: .28rem .5rem; border: 1px solid rgba(255,255,255,.42); border-radius: 99px; background: transparent; color: white; font-size: .68rem; font-weight: 750; }
+      .preview-swap-notice { width: fit-content; max-width: min(100%, 640px); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 7px; margin: 10px auto 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); font-size: .72rem; font-weight: 750; line-height: 1.2; box-shadow: 0 5px 16px rgba(25,30,29,.08); }
+      .preview-swap-notice button { min-height: 27px; padding: .3rem .52rem; border: 1px solid var(--line); border-radius: 99px; background: white; color: var(--ink); font-size: .68rem; font-weight: 750; }
+      .preview-swap-notice .preview-delete { border-color: rgba(183,71,41,.35); color: var(--accent-dark); }
+      .preview-slot-upload { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
       .gradient-controls > label { display: block; margin-top: 17px; }
       .gradient-controls .two-column > label:not(.color-field) { font-size: .74rem; }
       .spacing-controls { margin-top: 18px; }
@@ -193,7 +195,7 @@
         .preview-controls { width: 80vw; grid-template-columns: minmax(0, 1fr) minmax(105px, 42%); gap: 12px; }
         .preview-control select { font-size: 16px; }
         .canvas-wrap, .preview-footer { width: min(80vw, 680px); }
-        .preview-swap-notice { top: 8px; font-size: .68rem; }
+        .preview-swap-notice { width: min(80vw, 680px); font-size: .68rem; }
         #dateField { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; }
         input[type="text"], input[type="date"], select { font-size: 16px; }
         #dateField input { width: 100%; margin: 0; }
@@ -235,12 +237,15 @@
             <canvas id="collageCanvas" width="1440" height="2160" aria-label="편집 중인 2×2 콜라주"></canvas>
             <button id="previewLeftHandle" class="preview-boundary-handle" type="button" aria-label="왼쪽 열 사진 경계 드래그 핸들"></button>
             <button id="previewRightHandle" class="preview-boundary-handle" type="button" aria-label="오른쪽 열 사진 경계 드래그 핸들"></button>
-            <div id="previewSwapNotice" class="preview-swap-notice" hidden aria-live="polite">
-              <span>바꿀 사진을 탭하세요</span>
-              <button id="cancelPreviewSwap" type="button">취소</button>
-            </div>
           </div>
         </div>
+        <div id="previewSwapNotice" class="preview-swap-notice" hidden aria-live="polite">
+          <span>바꿀 사진을 탭하세요</span>
+          <button id="previewReplacePhoto" type="button">사진 교체</button>
+          <button id="previewRemovePhoto" class="preview-delete" type="button">사진 삭제</button>
+          <button id="cancelPreviewSwap" type="button">취소</button>
+        </div>
+        <input id="previewSlotUpload" class="preview-slot-upload" type="file" accept="image/*" />
         <div class="preview-footer">
           <p id="canvasCaption" class="canvas-caption">1440 × 2160 px · 2:3 PNG</p>
           <button id="resetBoundaries" class="reset-boundaries" type="button">등분으로 초기화</button>
@@ -417,7 +422,7 @@
           padding: $("#framePadding"), verticalPadding: $("#verticalPadding"), gap: $("#gridGap"), leftTopRatio: $("#leftTopRatio"), rightTopRatio: $("#rightTopRatio"), paddingValue: $("#paddingValue"), verticalPaddingValue: $("#verticalPaddingValue"), gapValue: $("#gapValue"), leftTopRatioValue: $("#leftTopRatioValue"), rightTopRatioValue: $("#rightTopRatioValue"),
           topTitle: $("#topTitle"), bottomTitle: $("#bottomTitle"), topTitleWeight: $("#topTitleWeight"), bottomTitleWeight: $("#bottomTitleWeight"), titleColor: $("#titleColor"), titleSize: $("#titleSize"), titleSizeValue: $("#titleSizeValue"),
           timestampEnabled: $("#timestampEnabled"), timestampControls: $("#timestampControls"), selectedDate: $("#selectedDate"), dateField: $("#dateField"),
-          download: $("#downloadButton"), aspectRatio: $("#aspectRatio"), canvasCaption: $("#canvasCaption"), canvasWrap: $(".canvas-wrap"), canvasStage: $("#canvasStage"), previewLeftHandle: $("#previewLeftHandle"), previewRightHandle: $("#previewRightHandle"), previewSwapNotice: $("#previewSwapNotice"), cancelPreviewSwap: $("#cancelPreviewSwap"), resetBoundaries: $("#resetBoundaries"),
+          download: $("#downloadButton"), aspectRatio: $("#aspectRatio"), canvasCaption: $("#canvasCaption"), canvasWrap: $(".canvas-wrap"), canvasStage: $("#canvasStage"), previewLeftHandle: $("#previewLeftHandle"), previewRightHandle: $("#previewRightHandle"), previewSwapNotice: $("#previewSwapNotice"), previewSlotUpload: $("#previewSlotUpload"), previewReplacePhoto: $("#previewReplacePhoto"), previewRemovePhoto: $("#previewRemovePhoto"), cancelPreviewSwap: $("#cancelPreviewSwap"), resetBoundaries: $("#resetBoundaries"),
         };
       
         function dateForInput(date = new Date()) {
@@ -895,6 +900,23 @@
           refreshCanvas();
         }
 
+        function replacePreviewSlot() {
+          if (!state.previewSwap) return;
+          const source = state.previewSwap.source;
+          exitPreviewSwap();
+          els.previewSlotUpload.value = "";
+          els.previewSlotUpload.dataset.slotIndex = String(source);
+          els.previewSlotUpload.click();
+        }
+
+        function removePreviewSlot() {
+          if (!state.previewSwap) return;
+          const source = state.previewSwap.source;
+          state.previewSwap = null;
+          els.previewSwapNotice.hidden = true;
+          removeSlot(source);
+        }
+
         function enterPreviewSwap(source) {
           clearPreviewTouch();
           state.isDragging = false;
@@ -1090,6 +1112,15 @@
             refreshCanvas();
           });
           els.cancelPreviewSwap.addEventListener("click", exitPreviewSwap);
+          els.previewReplacePhoto.addEventListener("click", replacePreviewSlot);
+          els.previewRemovePhoto.addEventListener("click", removePreviewSlot);
+          els.previewSlotUpload.addEventListener("change", (event) => {
+            const [file] = event.target.files;
+            const index = Number(event.target.dataset.slotIndex);
+            if (file && Number.isInteger(index)) loadFileIntoSlot(file, index);
+            event.target.value = "";
+            delete event.target.dataset.slotIndex;
+          });
           [els.topTitle, els.bottomTitle].forEach((input) => input.addEventListener("input", () => {
             state.title.top = els.topTitle.value;
             state.title.bottom = els.bottomTitle.value;
