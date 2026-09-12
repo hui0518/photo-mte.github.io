@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f4ef" />
+    <meta name="description" content="사진 뭉탱이 — 사진 네 장으로 만드는 2×2 콜라주 편집기" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231a1d1d'/%3E%3Cpath d='M11 11h18v18H11zm24 0h18v18H35zM11 35h18v18H11zm24 0h18v18H35z' fill='%23f4f4ef'/%3E%3C/svg%3E" />
+    <title>사진 뭉탱이 — 4컷 콜라주</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #181b1b;
+        --muted: #6c716e;
+        --line: #d9dcd8;
+        --paper: #f6f6f2;
+        --soft: #e9ebe6;
+        --accent: #e86844;
+        --accent-dark: #b74729;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      }
+      
+      @font-face {
+        font-family: "KimJeongcheolMyoungjo";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302_01@1.0/KimjungchulMyungjo-Light.woff2") format("woff2");
+        font-weight: 300;
+        font-style: normal;
+        font-display: swap;
+      }
+      
+      @font-face {
+        font-family: "KimJeongcheolMyoungjo";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302_01@1.0/KimjungchulMyungjo-Regular.woff2") format("woff2");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      
+      @font-face {
+        font-family: "KimJeongcheolMyoungjo";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302_01@1.0/KimjungchulMyungjo-Bold.woff2") format("woff2");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+      
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; min-width: 320px; background: var(--soft); color: var(--ink); }
+      button, input { font: inherit; }
+      button { cursor: pointer; }
+      
+      .site-header {
+        min-height: 74px; padding: 16px clamp(20px, 4vw, 64px); display: flex; align-items: center; gap: 24px;
+        background: var(--paper); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20;
+      }
+      .brand { color: var(--ink); text-decoration: none; font-family: Georgia, "Times New Roman", serif; font-weight: 900; font-size: 1.32rem; letter-spacing: .08em; }
+      .site-header p { margin: 0; color: var(--muted); font-size: .87rem; }
+      .download-button { margin-left: auto; padding: .75rem 1.05rem; border: 0; border-radius: 99px; background: var(--ink); color: white; font-size: .9rem; font-weight: 750; transition: transform .18s, opacity .18s, background .18s; }
+      .download-button:not(:disabled):hover { background: var(--accent-dark); transform: translateY(-1px); }
+      .download-button:disabled { cursor: not-allowed; opacity: .42; }
+      
+      .workspace { max-width: 1540px; margin: 0 auto; padding: clamp(24px, 4vw, 58px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 470px); gap: clamp(26px, 4vw, 72px); align-items: start; }
+      .preview-panel { min-width: 0; position: sticky; top: 108px; }
+      .preview-topline { margin: 0 0 18px; display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+      .eyebrow { display: block; color: var(--accent-dark); font-weight: 800; font-size: .68rem; letter-spacing: .13em; line-height: 1; }
+      h1, h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; }
+      h1 { margin-top: .45rem; font-size: clamp(2rem, 4vw, 3.4rem); letter-spacing: -.06em; }
+      h2 { margin-top: .35rem; font-size: 1.42rem; letter-spacing: -.035em; }
+      .preview-hint { max-width: 230px; margin: 0; color: var(--muted); font-size: .83rem; line-height: 1.5; text-align: right; }
+      .canvas-wrap { width: 100%; height: min(62vh, 640px); margin: 0 auto; display: flex; align-items: center; justify-content: center; }
+      .canvas-stage { position: relative; flex: 0 0 auto; line-height: 0; }
+      #collageCanvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: default; background: #fff; box-shadow: 0 22px 55px rgba(25, 30, 29, .15); }
+      #collageCanvas.is-draggable { cursor: grab; }
+      #collageCanvas.is-dragging { cursor: grabbing; }
+      .preview-boundary-handle { position: absolute; z-index: 3; height: 22px; margin: 0; padding: 0; border: 0; background: transparent; cursor: ns-resize; touch-action: none; transform: translateY(-50%); }
+      .preview-boundary-handle::before { content: ""; position: absolute; inset: 50% 0 auto; height: 1px; background: rgba(82, 87, 86, .32); transform: translateY(-50%); transition: height .15s ease, background .15s ease; }
+      .preview-boundary-handle::after { display: none; }
+      .preview-boundary-handle:hover::before, .preview-boundary-handle.is-dragging::before, .preview-boundary-handle:focus-visible::before { height: 2px; background: rgba(82, 87, 86, .7); }
+      .preview-boundary-handle:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+      .preview-footer { width: min(100%, 640px); margin: 12px auto 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .canvas-caption { margin: 0; color: var(--muted); font-size: .74rem; letter-spacing: .04em; }
+      .reset-boundaries { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 99px; padding: .42rem .7rem; background: var(--paper); color: var(--ink); font-size: .72rem; font-weight: 750; }
+      .reset-boundaries:hover { border-color: var(--accent); color: var(--accent-dark); }
+      
+      .controls { background: var(--paper); border: 1px solid var(--line); box-shadow: 0 14px 45px rgba(31, 37, 35, .06); }
+      .control-section { padding: 26px; border-bottom: 1px solid var(--line); }
+      .control-section:last-child { border-bottom: 0; }
+      .section-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 17px; }
+      .count-badge { min-width: 45px; padding: .34rem .45rem; border-radius: 99px; background: var(--ink); color: white; font-size: .7rem; text-align: center; font-weight: 750; }
+      label { display: block; color: #303534; font-size: .78rem; font-weight: 730; letter-spacing: .01em; }
+      input[type="text"], input[type="date"], select { width: 100%; min-height: 43px; margin: 7px 0 15px; padding: .65rem .75rem; border: 1px solid #cbd0cb; border-radius: 7px; color: var(--ink); background: white; outline: none; font-size: .94rem; }
+      input[type="text"]:focus, input[type="date"]:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,104,68,.14); }
+      input[type="range"] { width: 100%; margin: 10px 0 2px; accent-color: var(--accent); }
+      input[type="color"] { width: 42px; height: 32px; padding: 2px; border: 1px solid #cbd0cb; border-radius: 6px; background: white; cursor: pointer; }
+      output { float: right; color: var(--muted); font-size: .72rem; font-weight: 650; }
+      
+      .primary-upload { display: flex; align-items: baseline; justify-content: space-between; min-height: 46px; padding: .7rem .85rem; border-radius: 7px; background: var(--ink); color: white; cursor: pointer; }
+      .primary-upload span { color: #cdd0cf; font-size: .7rem; font-weight: 650; }
+      #photoUpload { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+      .field-note { margin: 8px 0 0; color: var(--muted); font-size: .74rem; line-height: 1.45; }
+      .field-note.is-warning { color: var(--accent-dark); font-weight: 700; }
+      .photo-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+      .photo-slot { min-width: 0; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: #fff; transition: border-color .15s, box-shadow .15s, opacity .15s, transform .15s; }
+      .photo-slot.is-selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(232,104,68,.16); }
+      .photo-slot.is-dragging { opacity: .46; transform: scale(.97); }
+      .photo-slot.is-drop-target { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(232,104,68,.28); }
+      .slot-main { width: 100%; min-height: 39px; display: flex; gap: 7px; align-items: center; padding: .45rem .55rem; border: 0; background: transparent; color: var(--ink); text-align: left; touch-action: none; }
+      .slot-number { color: var(--accent-dark); font-size: .72rem; font-weight: 800; }
+      .slot-label { min-width: 0; overflow: hidden; color: var(--muted); font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
+      .photo-slot.has-image .slot-label { color: var(--ink); font-weight: 700; }
+      .slot-actions { display: none; border-top: 1px solid var(--line); }
+      .photo-slot.has-image .slot-actions { display: flex; }
+      .replace-label, .remove-slot { flex: 1; min-height: 31px; border: 0; background: #f2f3ef; color: #3a3e3c; text-align: center; font-size: .68rem; line-height: 31px; cursor: pointer; }
+      .replace-label { border-right: 1px solid var(--line); }
+      .replace-label input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+      .remove-slot { max-width: 36px; font-size: 1.2rem; line-height: 27px; }
+      .crop-controls { margin-top: 16px; padding-top: 16px; border-top: 1px dashed #d2d5d0; }
+      .crop-controls input:disabled { opacity: .4; }
+      .field-row { display: flex; justify-content: space-between; align-items: baseline; }
+      .field-row output { float: none; }
+      
+      .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 0 0 15px; padding: 4px; border-radius: 8px; background: #e6e8e3; }
+      .mode-button { min-height: 31px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font-size: .74rem; font-weight: 750; }
+      .mode-button.is-active { background: white; color: var(--ink); box-shadow: 0 1px 3px rgba(25,30,29,.1); }
+      .color-row { min-height: 44px; display: flex; align-items: center; justify-content: space-between; }
+      .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+      .color-field { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .gradient-controls > label { display: block; margin-top: 17px; }
+      .gradient-controls .two-column > label:not(.color-field) { font-size: .74rem; }
+      .spacing-controls { margin-top: 18px; }
+      .range-field { display: block; margin-top: 18px; }
+      .column-split-controls { margin-top: 18px; }
+      .column-split-controls label { font-size: .74rem; }
+      .ratio-note { margin: -7px 0 16px; }
+      .title-style { margin-top: 2px; align-items: center; }
+      .title-weights { margin-top: -2px; }
+      .title-weights select { min-height: 86px; margin-bottom: 0; font-size: .78rem; }
+      .title-style > label:not(.color-field) { font-size: .74rem; }
+      .switch-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+      .switch-row input { width: 38px; height: 21px; accent-color: var(--accent); }
+      .timestamp-mode { margin-bottom: 13px; }
+      .radio-row { display: flex; gap: 18px; margin-top: 2px; }
+      .radio-row label { display: flex; align-items: center; gap: 5px; font-size: .77rem; font-weight: 650; }
+      .radio-row input { accent-color: var(--accent); }
+      
+      @media (max-width: 960px) {
+        .workspace { grid-template-columns: 1fr; max-width: 820px; }
+        .preview-panel { position: static; }
+        .canvas-wrap { width: min(100%, 680px); height: auto; }
+        .preview-footer { width: min(100%, 680px); }
+      }
+      @media (max-width: 560px) {
+        .preview-boundary-handle::after { content: "↕"; position: absolute; top: 50%; left: 50%; display: grid; width: 18px; height: 18px; place-items: center; border-radius: 50%; background: rgba(82, 87, 86, .28); color: rgba(255, 255, 255, .9); font-family: system-ui, sans-serif; font-size: 11px; font-weight: 700; line-height: 1; pointer-events: none; transform: translate(-50%, -50%); transition: background .15s ease, transform .15s ease; }
+        .preview-boundary-handle.is-dragging::after { background: rgba(82, 87, 86, .55); transform: translate(-50%, -50%) scale(1.08); }
+        .site-header { min-height: 66px; gap: 12px; padding: 12px 16px; }
+        .site-header p { display: none; }
+        .download-button { padding: .65rem .78rem; font-size: .8rem; }
+        .workspace { padding: 22px 15px 38px; gap: 28px; }
+        .preview-topline { align-items: start; }
+        .preview-hint { font-size: .72rem; }
+        .control-section { padding: 22px 18px; }
+        .two-column { gap: 12px; }
+        .photo-slots { gap: 6px; }
+      }
+      
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="사진 뭉탱이 홈">사진 뭉탱이</a>
+      <p>4장의 순간을 한 장으로</p>
+      <button id="downloadButton" class="download-button" type="button" disabled>
+        PNG 다운로드
+      </button>
+    </header>
+
+    <main id="top" class="workspace">
+      <section class="preview-panel" aria-label="콜라주 미리보기">
+        <div class="preview-topline">
+          <div>
+            <span class="eyebrow">LIVE PREVIEW</span>
+            <h1>나의 4컷</h1>
+          </div>
+          <p id="previewHint" class="preview-hint">사진을 선택하면 구도를 드래그할 수 있어요.</p>
+        </div>
+        <div class="canvas-wrap">
+          <div id="canvasStage" class="canvas-stage">
+            <canvas id="collageCanvas" width="1440" height="2160" aria-label="편집 중인 2×2 콜라주"></canvas>
+            <button id="previewLeftHandle" class="preview-boundary-handle" type="button" aria-label="왼쪽 열 사진 경계 드래그 핸들"></button>
+            <button id="previewRightHandle" class="preview-boundary-handle" type="button" aria-label="오른쪽 열 사진 경계 드래그 핸들"></button>
+          </div>
+        </div>
+        <div class="preview-footer">
+          <p id="canvasCaption" class="canvas-caption">1440 × 2160 px · 2:3 PNG</p>
+          <button id="resetBoundaries" class="reset-boundaries" type="button">등분으로 초기화</button>
+        </div>
+      </section>
+
+      <aside class="controls" aria-label="콜라주 편집 설정">
+        <section class="control-section photos-section">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">01</span>
+              <h2>사진 4장</h2>
+            </div>
+            <span id="photoCount" class="count-badge">0 / 4</span>
+          </div>
+          <label class="primary-upload" for="photoUpload">사진 선택하기 <span>최대 4장</span></label>
+          <input id="photoUpload" type="file" accept="image/*" multiple />
+          <p id="uploadMessage" class="field-note">사진 4장을 선택해 주세요.</p>
+          <p class="field-note">사진 슬롯을 끌어 놓으면 두 사진의 위치를 바꿀 수 있어요.</p>
+          <div id="photoSlots" class="photo-slots" aria-label="사진 슬롯"></div>
+          <div class="crop-controls">
+            <div class="field-row">
+              <label for="slotScale">선택 사진 확대</label>
+              <output id="scaleValue" for="slotScale">100%</output>
+            </div>
+            <input id="slotScale" type="range" min="1" max="3" step="0.01" value="1" disabled />
+            <p class="field-note">사진 칸을 선택한 뒤, 미리보기에서 끌어 위치를 조절하세요.</p>
+          </div>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading">
+            <div><span class="eyebrow">02</span><h2>프레임</h2></div>
+          </div>
+          <label for="aspectRatio">출력 비율</label>
+          <select id="aspectRatio">
+            <option value="square">1:1 · 1440 × 1440</option>
+            <option value="fourFive">4:5 · 1440 × 1800</option>
+            <option value="twoThree" selected>2:3 · 1440 × 2160</option>
+            <option value="nineSixteen">9:16 · 1440 × 2560</option>
+          </select>
+          <p class="field-note ratio-note">비율을 바꿔도 사진과 편집 설정은 유지됩니다.</p>
+          <div class="segmented" role="group" aria-label="프레임 색상 방식">
+            <button class="mode-button is-active" type="button" data-frame-mode="solid">단색</button>
+            <button class="mode-button" type="button" data-frame-mode="gradient">그라디언트</button>
+          </div>
+          <div id="solidControls" class="color-row">
+            <label for="solidColor">프레임 색상</label>
+            <input id="solidColor" type="color" value="#f7f7f3" />
+          </div>
+          <div id="gradientControls" class="gradient-controls" hidden>
+            <div class="two-column">
+              <label class="color-field" for="gradientColorA">시작 색상<input id="gradientColorA" type="color" value="#f1d7c9" /></label>
+              <label class="color-field" for="gradientColorB">끝 색상<input id="gradientColorB" type="color" value="#c7dce3" /></label>
+            </div>
+            <label for="gradientAngle">방향 <output id="angleValue" for="gradientAngle">135°</output></label>
+            <input id="gradientAngle" type="range" min="0" max="360" value="135" />
+            <div class="two-column">
+              <label for="gradientStopA">시작 정지점 <output id="stopAValue" for="gradientStopA">0%</output><input id="gradientStopA" type="range" min="0" max="100" value="0" /></label>
+              <label for="gradientStopB">끝 정지점 <output id="stopBValue" for="gradientStopB">100%</output><input id="gradientStopB" type="range" min="0" max="100" value="100" /></label>
+            </div>
+          </div>
+          <div class="two-column spacing-controls">
+            <label for="framePadding">좌우 여백 <output id="paddingValue" for="framePadding">50 px</output><input id="framePadding" type="range" min="18" max="150" value="50" /></label>
+            <label for="verticalPadding">상하 여백 <output id="verticalPaddingValue" for="verticalPadding">50 px</output><input id="verticalPadding" type="range" min="18" max="260" value="50" /></label>
+          </div>
+          <label class="range-field" for="gridGap">사진 사이 간격 <output id="gapValue" for="gridGap">16 px</output><input id="gridGap" type="range" min="4" max="64" value="16" /></label>
+          <div class="two-column column-split-controls">
+            <label for="leftTopRatio">왼쪽 열 상단 사진 높이 <output id="leftTopRatioValue" for="leftTopRatio">50%</output><input id="leftTopRatio" type="range" min="20" max="80" value="50" /></label>
+            <label for="rightTopRatio">오른쪽 열 상단 사진 높이 <output id="rightTopRatioValue" for="rightTopRatio">50%</output><input id="rightTopRatio" type="range" min="20" max="80" value="50" /></label>
+          </div>
+          <p class="field-note">두 열의 상하 사진 경계를 각각 조절할 수 있어요.</p>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading"><div><span class="eyebrow">03</span><h2>제목</h2></div></div>
+          <label for="topTitle">상단 중앙 제목</label>
+          <input id="topTitle" type="text" maxlength="54" placeholder="예: MONO MANSION" />
+          <label for="bottomTitle">하단 중앙 제목</label>
+          <input id="bottomTitle" type="text" maxlength="54" placeholder="예: SEPTEMBER DAYS" />
+          <div class="two-column title-weights">
+            <label for="topTitleWeight">상단 제목 굵기
+              <select id="topTitleWeight">
+                <option value="300">300 · Light</option>
+                <option value="400" selected>400 · Regular</option>
+                <option value="700">700 · Bold</option>
+              </select>
+            </label>
+            <label for="bottomTitleWeight">하단 제목 굵기
+              <select id="bottomTitleWeight">
+                <option value="300">300 · Light</option>
+                <option value="400" selected>400 · Regular</option>
+                <option value="700">700 · Bold</option>
+              </select>
+            </label>
+          </div>
+          <div class="two-column title-style">
+            <label class="color-field" for="titleColor">글자색<input id="titleColor" type="color" value="#151515" /></label>
+            <label for="titleSize">글자 크기 <output id="titleSizeValue" for="titleSize">52 px</output><input id="titleSize" type="range" min="28" max="90" value="52" /></label>
+          </div>
+        </section>
+
+        <section class="control-section timestamp-section">
+          <div class="section-heading"><div><span class="eyebrow">04</span><h2>타임스탬프</h2></div></div>
+          <label class="switch-row" for="timestampEnabled">
+            <span>타임스탬프 표시</span><input id="timestampEnabled" type="checkbox" checked />
+          </label>
+          <div id="timestampControls">
+            <div class="segmented timestamp-mode" role="group" aria-label="타임스탬프 방식">
+              <button class="mode-button is-active" type="button" data-timestamp-mode="now">현재 시각</button>
+              <button class="mode-button" type="button" data-timestamp-mode="date">날짜 선택</button>
+            </div>
+            <label id="dateField" for="selectedDate" hidden>표시할 날짜<input id="selectedDate" type="date" /></label>
+            <div class="radio-row" role="radiogroup" aria-label="타임스탬프 위치">
+              <label><input type="radio" name="timestampPosition" value="left" /> 왼쪽 아래</label>
+              <label><input type="radio" name="timestampPosition" value="right" checked /> 오른쪽 아래</label>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <template id="slotTemplate">
+      <article class="photo-slot">
+        <button class="slot-main" type="button"><span class="slot-number"></span><span class="slot-label"></span></button>
+        <div class="slot-actions">
+          <label class="replace-label"><span>교체</span><input class="slot-file" type="file" accept="image/*" /></label>
+          <button class="remove-slot" type="button" aria-label="사진 삭제">×</button>
+        </div>
+      </article>
+    </template>
+    <script>
+      (() => {
+        "use strict";
+      
+        const SIZE = { width: 1440, height: 2160 };
+        const ASPECTS = {
+          square: { height: 1440, label: "1:1" },
+          fourFive: { height: 1800, label: "4:5" },
+          twoThree: { height: 2160, label: "2:3" },
+          nineSixteen: { height: 2560, label: "9:16" },
+        };
+        const canvas = document.querySelector("#collageCanvas");
+        const ctx = canvas.getContext("2d");
+        const offscreen = document.createElement("canvas");
+        offscreen.width = SIZE.width;
+        offscreen.height = SIZE.height;
+        const exportCtx = offscreen.getContext("2d");
+      
+        const state = {
+          activeSlot: null,
+          isDragging: false,
+          drag: null,
+          slotDrag: { nativeSource: null, touch: null, ignoreClickUntil: 0 },
+          boundaryDrag: null,
+          aspect: "twoThree",
+          slots: Array.from({ length: 4 }, () => ({ image: null, name: "", scale: 1, offsetX: 0, offsetY: 0 })),
+          frame: { mode: "solid", solid: "#f7f7f3", colorA: "#f1d7c9", colorB: "#c7dce3", stopA: 0, stopB: 100, angle: 135, padding: 50, verticalPadding: 50, gap: 16, leftTopRatio: 50, rightTopRatio: 50 },
+          title: { top: "", bottom: "", topWeight: 400, bottomWeight: 400, color: "#151515", size: 52 },
+          timestamp: { enabled: true, mode: "now", date: "", position: "right" },
+        };
+      
+        const $ = (selector) => document.querySelector(selector);
+        const els = {
+          photoUpload: $("#photoUpload"), photoSlots: $("#photoSlots"), slotTemplate: $("#slotTemplate"), photoCount: $("#photoCount"), uploadMessage: $("#uploadMessage"),
+          slotScale: $("#slotScale"), scaleValue: $("#scaleValue"),
+          solidControls: $("#solidControls"), gradientControls: $("#gradientControls"),
+          solidColor: $("#solidColor"), colorA: $("#gradientColorA"), colorB: $("#gradientColorB"), angle: $("#gradientAngle"), angleValue: $("#angleValue"),
+          stopA: $("#gradientStopA"), stopB: $("#gradientStopB"), stopAValue: $("#stopAValue"), stopBValue: $("#stopBValue"),
+          padding: $("#framePadding"), verticalPadding: $("#verticalPadding"), gap: $("#gridGap"), leftTopRatio: $("#leftTopRatio"), rightTopRatio: $("#rightTopRatio"), paddingValue: $("#paddingValue"), verticalPaddingValue: $("#verticalPaddingValue"), gapValue: $("#gapValue"), leftTopRatioValue: $("#leftTopRatioValue"), rightTopRatioValue: $("#rightTopRatioValue"),
+          topTitle: $("#topTitle"), bottomTitle: $("#bottomTitle"), topTitleWeight: $("#topTitleWeight"), bottomTitleWeight: $("#bottomTitleWeight"), titleColor: $("#titleColor"), titleSize: $("#titleSize"), titleSizeValue: $("#titleSizeValue"),
+          timestampEnabled: $("#timestampEnabled"), timestampControls: $("#timestampControls"), selectedDate: $("#selectedDate"), dateField: $("#dateField"),
+          download: $("#downloadButton"), previewHint: $("#previewHint"), aspectRatio: $("#aspectRatio"), canvasCaption: $("#canvasCaption"), canvasWrap: $(".canvas-wrap"), canvasStage: $("#canvasStage"), previewLeftHandle: $("#previewLeftHandle"), previewRightHandle: $("#previewRightHandle"), resetBoundaries: $("#resetBoundaries"),
+        };
+      
+        function dateForInput(date = new Date()) {
+          const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+          return local.toISOString().slice(0, 10);
+        }
+      
+        function applyAspect() {
+          const aspect = ASPECTS[state.aspect];
+          SIZE.height = aspect.height;
+          canvas.width = SIZE.width;
+          canvas.height = SIZE.height;
+          offscreen.width = SIZE.width;
+          offscreen.height = SIZE.height;
+          els.canvasCaption.textContent = `${SIZE.width} × ${SIZE.height} px · ${aspect.label} PNG`;
+          updatePreviewStage();
+        }
+      
+        function updatePreviewStage() {
+          const availableWidth = els.canvasWrap.clientWidth || SIZE.width;
+          const isMobilePreview = window.innerWidth <= 960;
+          let width;
+          let height;
+          if (isMobilePreview) {
+            width = availableWidth;
+            height = width * SIZE.height / SIZE.width;
+          } else {
+            height = Math.min(window.innerHeight * .62, 640, availableWidth * SIZE.height / SIZE.width);
+            width = height * SIZE.width / SIZE.height;
+          }
+          els.canvasStage.style.width = `${Math.round(width)}px`;
+          els.canvasStage.style.height = `${Math.round(height)}px`;
+        }
+      
+        function positionPreviewHandles() {
+          const stageWidth = els.canvasStage.clientWidth;
+          const stageHeight = els.canvasStage.clientHeight;
+          if (!stageWidth || !stageHeight) return;
+          const geometry = layout();
+          const setPosition = (handle, topCell) => {
+            const x = topCell.x / SIZE.width * stageWidth;
+            const y = (topCell.y + topCell.height + state.frame.gap / 2) / SIZE.height * stageHeight;
+            const width = topCell.width / SIZE.width * stageWidth;
+            handle.style.left = `${x}px`;
+            handle.style.top = `${y}px`;
+            handle.style.width = `${width}px`;
+          };
+          setPosition(els.previewLeftHandle, geometry.cells[0]);
+          setPosition(els.previewRightHandle, geometry.cells[1]);
+        }
+      
+        function syncBoundaryControls() {
+          els.leftTopRatio.value = state.frame.leftTopRatio;
+          els.rightTopRatio.value = state.frame.rightTopRatio;
+          els.leftTopRatioValue.textContent = `${state.frame.leftTopRatio}%`;
+          els.rightTopRatioValue.textContent = `${state.frame.rightTopRatio}%`;
+        }
+      
+        function formatNow(date = new Date()) {
+          const two = (value) => String(value).padStart(2, "0");
+          return `${date.getFullYear()}.${two(date.getMonth() + 1)}.${two(date.getDate())} ${two(date.getHours())}:${two(date.getMinutes())}`;
+        }
+      
+        function countImages() { return state.slots.filter((slot) => slot.image).length; }
+      
+        function makeFrameFill(context) {
+          if (state.frame.mode === "solid") return state.frame.solid;
+          const radians = (state.frame.angle - 90) * Math.PI / 180;
+          const cx = SIZE.width / 2, cy = SIZE.height / 2;
+          const distance = Math.sqrt(SIZE.width ** 2 + SIZE.height ** 2) / 2;
+          const gradient = context.createLinearGradient(cx - Math.cos(radians) * distance, cy - Math.sin(radians) * distance, cx + Math.cos(radians) * distance, cy + Math.sin(radians) * distance);
+          // Canvas gradients require color stops in ascending order.  Keeping the
+          // colors attached to their own controls still makes crossed stop handles
+          // useful, while avoiding a rendering exception.
+          const firstStop = Math.min(state.frame.stopA, state.frame.stopB) / 100;
+          const secondStop = Math.max(state.frame.stopA, state.frame.stopB) / 100;
+          gradient.addColorStop(firstStop, state.frame.colorA);
+          gradient.addColorStop(secondStop, state.frame.colorB);
+          return gradient;
+        }
+      
+        function titleBandHeight(text) {
+          return text.trim() ? Math.max(125, state.title.size * 2.5) : 0;
+        }
+      
+        function layout() {
+          const padX = state.frame.padding;
+          const padY = state.frame.verticalPadding;
+          const gap = state.frame.gap;
+          const topBand = titleBandHeight(state.title.top);
+          const bottomBand = titleBandHeight(state.title.bottom);
+          const x = padX;
+          const y = padY + topBand;
+          const width = SIZE.width - padX * 2;
+          const height = SIZE.height - padY * 2 - topBand - bottomBand;
+          const cellW = (width - gap) / 2;
+          const usableColumnHeight = height - gap;
+          const leftTopHeight = usableColumnHeight * state.frame.leftTopRatio / 100;
+          const rightTopHeight = usableColumnHeight * state.frame.rightTopRatio / 100;
+          const leftBottomHeight = usableColumnHeight - leftTopHeight;
+          const rightBottomHeight = usableColumnHeight - rightTopHeight;
+          return {
+            padX, padY, topBand, bottomBand,
+            cells: [
+              { x, y, width: cellW, height: leftTopHeight },
+              { x: x + cellW + gap, y, width: cellW, height: rightTopHeight },
+              { x, y: y + leftTopHeight + gap, width: cellW, height: leftBottomHeight },
+              { x: x + cellW + gap, y: y + rightTopHeight + gap, width: cellW, height: rightBottomHeight },
+            ],
+          };
+        }
+      
+        function clampSlot(slot, cell) {
+          if (!slot.image) return;
+          const image = slot.image;
+          const scale = Math.max(cell.width / image.naturalWidth, cell.height / image.naturalHeight) * slot.scale;
+          const overflowX = Math.max(0, (image.naturalWidth * scale - cell.width) / 2);
+          const overflowY = Math.max(0, (image.naturalHeight * scale - cell.height) / 2);
+          slot.offsetX = Math.max(-overflowX, Math.min(overflowX, slot.offsetX));
+          slot.offsetY = Math.max(-overflowY, Math.min(overflowY, slot.offsetY));
+        }
+      
+        function drawImage(context, slot, cell) {
+          context.save();
+          context.beginPath();
+          context.rect(cell.x, cell.y, cell.width, cell.height);
+          context.clip();
+          if (!slot.image) {
+            context.fillStyle = "rgba(255,255,255,.55)";
+            context.fillRect(cell.x, cell.y, cell.width, cell.height);
+            context.fillStyle = "rgba(21,21,21,.38)";
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.font = "700 27px system-ui, sans-serif";
+            context.fillText("PHOTO", cell.x + cell.width / 2, cell.y + cell.height / 2);
+            context.restore();
+            return;
+          }
+          clampSlot(slot, cell);
+          const baseScale = Math.max(cell.width / slot.image.naturalWidth, cell.height / slot.image.naturalHeight);
+          const scaled = baseScale * slot.scale;
+          const width = slot.image.naturalWidth * scaled;
+          const height = slot.image.naturalHeight * scaled;
+          const x = cell.x + (cell.width - width) / 2 + slot.offsetX;
+          const y = cell.y + (cell.height - height) / 2 + slot.offsetY;
+          context.drawImage(slot.image, x, y, width, height);
+          context.restore();
+        }
+      
+        function fitText(context, text, maxWidth, initialSize, weight) {
+          let size = initialSize;
+          context.font = `${weight} ${size}px KimJeongcheolMyoungjo, Georgia, 'Times New Roman', serif`;
+          while (context.measureText(text).width > maxWidth && size > 22) {
+            size -= 1;
+            context.font = `${weight} ${size}px KimJeongcheolMyoungjo, Georgia, 'Times New Roman', serif`;
+          }
+        }
+      
+        function drawTitle(context, text, y, weight) {
+          if (!text.trim()) return;
+          context.save();
+          context.fillStyle = state.title.color;
+          context.textAlign = "center";
+          context.textBaseline = "middle";
+          fitText(context, text.trim(), SIZE.width - state.frame.padding * 3, state.title.size, weight);
+          context.fillText(text.trim(), SIZE.width / 2, y);
+          context.restore();
+        }
+      
+        function stampText(now = new Date()) {
+          if (!state.timestamp.enabled) return "";
+          if (state.timestamp.mode === "now") return formatNow(now);
+          return state.timestamp.date || "";
+        }
+      
+        function render(context, showSelection = true, now = new Date()) {
+          context.clearRect(0, 0, SIZE.width, SIZE.height);
+          context.fillStyle = makeFrameFill(context);
+          context.fillRect(0, 0, SIZE.width, SIZE.height);
+          const geometry = layout();
+          geometry.cells.forEach((cell, index) => drawImage(context, state.slots[index], cell));
+          // Each title sits at the geometric centre of its full top/bottom frame area,
+          // rather than being centred only in the title band beside the photo grid.
+          drawTitle(context, state.title.top, (geometry.padY + geometry.topBand) / 2, state.title.topWeight);
+          drawTitle(context, state.title.bottom, SIZE.height - (geometry.padY + geometry.bottomBand) / 2, state.title.bottomWeight);
+          const stamp = stampText(now);
+          if (stamp) {
+            context.save();
+            context.fillStyle = state.title.color;
+            context.globalAlpha = .82;
+            context.font = "650 25px system-ui, sans-serif";
+            context.textBaseline = "alphabetic";
+            context.textAlign = state.timestamp.position === "left" ? "left" : "right";
+            const x = state.timestamp.position === "left" ? geometry.padX + 7 : SIZE.width - geometry.padX - 7;
+            context.fillText(stamp, x, SIZE.height - geometry.padY / 2);
+            context.restore();
+          }
+          if (showSelection && state.activeSlot !== null && state.slots[state.activeSlot].image) {
+            const cell = geometry.cells[state.activeSlot];
+            context.save();
+            context.lineWidth = 8;
+            context.strokeStyle = "#e86844";
+            context.strokeRect(cell.x + 4, cell.y + 4, cell.width - 8, cell.height - 8);
+            context.restore();
+          }
+        }
+      
+        function refreshCanvas() {
+          render(ctx, true);
+          positionPreviewHandles();
+          const active = state.activeSlot !== null && state.slots[state.activeSlot].image;
+          canvas.classList.toggle("is-draggable", Boolean(active));
+        }
+      
+        function updateSlotsUI() {
+          els.photoSlots.innerHTML = "";
+          state.slots.forEach((slot, index) => {
+            const node = els.slotTemplate.content.firstElementChild.cloneNode(true);
+            node.dataset.slotIndex = index;
+            node.draggable = Boolean(slot.image);
+            node.classList.toggle("has-image", Boolean(slot.image));
+            node.classList.toggle("is-selected", state.activeSlot === index);
+            node.querySelector(".slot-number").textContent = `0${index + 1}`;
+            node.querySelector(".slot-label").textContent = slot.image ? slot.name : "사진 없음";
+            const slotMain = node.querySelector(".slot-main");
+            slotMain.addEventListener("click", () => {
+              if (Date.now() < state.slotDrag.ignoreClickUntil) return;
+              selectSlot(index);
+            });
+            bindSlotReorder(node, slotMain, index);
+            node.querySelector(".slot-file").addEventListener("change", (event) => {
+              const [file] = event.target.files;
+              if (file) loadFileIntoSlot(file, index);
+            });
+            node.querySelector(".remove-slot").addEventListener("click", () => removeSlot(index));
+            els.photoSlots.append(node);
+          });
+          const count = countImages();
+          els.photoCount.textContent = `${count} / 4`;
+          els.download.disabled = count !== 4;
+          els.uploadMessage.textContent = count === 4 ? "준비 완료! 사진을 클릭해 구도를 조절하세요." : `${4 - count}장의 사진이 더 필요해요.`;
+          els.uploadMessage.classList.toggle("is-warning", count > 0 && count < 4);
+        }
+      
+        function updateActiveControls() {
+          const slot = state.activeSlot !== null ? state.slots[state.activeSlot] : null;
+          const enabled = Boolean(slot?.image);
+          els.slotScale.disabled = !enabled;
+          els.slotScale.value = enabled ? slot.scale : 1;
+          els.scaleValue.textContent = enabled ? `${Math.round(slot.scale * 100)}%` : "—";
+        }
+      
+        function selectSlot(index) {
+          state.activeSlot = index;
+          updateSlotsUI();
+          updateActiveControls();
+          refreshCanvas();
+        }
+      
+        function loadFileIntoSlot(file, index) {
+          if (!file.type.startsWith("image/")) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            const image = new Image();
+            image.onload = () => {
+              state.slots[index] = { image, name: file.name, scale: 1, offsetX: 0, offsetY: 0 };
+              selectSlot(index);
+            };
+            image.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      
+        function removeSlot(index) {
+          state.slots[index] = { image: null, name: "", scale: 1, offsetX: 0, offsetY: 0 };
+          if (state.activeSlot === index) state.activeSlot = null;
+          updateSlotsUI();
+          updateActiveControls();
+          refreshCanvas();
+        }
+      
+        function handleBulkUpload(files) {
+          const valid = [...files].filter((file) => file.type.startsWith("image/")).slice(0, 4);
+          valid.forEach((file, index) => loadFileIntoSlot(file, index));
+          els.photoUpload.value = "";
+        }
+      
+        function clearSlotDragClasses() {
+          els.photoSlots.querySelectorAll(".is-dragging, .is-drop-target").forEach((node) => {
+            node.classList.remove("is-dragging", "is-drop-target");
+          });
+        }
+      
+        function setSlotDropTarget(index) {
+          els.photoSlots.querySelectorAll(".photo-slot").forEach((node) => {
+            node.classList.toggle("is-drop-target", Number(node.dataset.slotIndex) === index);
+          });
+        }
+      
+        function swapSlots(first, second) {
+          if (first === second || !state.slots[first].image) return;
+          [state.slots[first], state.slots[second]] = [state.slots[second], state.slots[first]];
+          if (state.activeSlot === first) state.activeSlot = second;
+          else if (state.activeSlot === second) state.activeSlot = first;
+          updateSlotsUI();
+          updateActiveControls();
+          refreshCanvas();
+        }
+      
+        function bindSlotReorder(node, slotMain, index) {
+          node.addEventListener("dragstart", (event) => {
+            if (!state.slots[index].image) {
+              event.preventDefault();
+              return;
+            }
+            state.slotDrag.nativeSource = index;
+            event.dataTransfer?.setData("text/plain", String(index));
+            if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+            node.classList.add("is-dragging");
+          });
+          node.addEventListener("dragover", (event) => {
+            const source = state.slotDrag.nativeSource;
+            if (source === null || source === index) return;
+            event.preventDefault();
+            if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+            setSlotDropTarget(index);
+          });
+          node.addEventListener("dragleave", (event) => {
+            if (!node.contains(event.relatedTarget)) node.classList.remove("is-drop-target");
+          });
+          node.addEventListener("drop", (event) => {
+            event.preventDefault();
+            const sourceText = event.dataTransfer?.getData("text/plain");
+            const source = state.slotDrag.nativeSource ?? (sourceText ? Number(sourceText) : null);
+            clearSlotDragClasses();
+            state.slotDrag.nativeSource = null;
+            if (Number.isInteger(source)) swapSlots(source, index);
+          });
+          node.addEventListener("dragend", () => {
+            state.slotDrag.nativeSource = null;
+            clearSlotDragClasses();
+          });
+      
+          slotMain.addEventListener("pointerdown", (event) => {
+            if (event.pointerType !== "touch" || !state.slots[index].image) return;
+            slotMain.setPointerCapture(event.pointerId);
+            state.slotDrag.touch = { pointerId: event.pointerId, source: index, startX: event.clientX, startY: event.clientY, active: false, target: null };
+          });
+          slotMain.addEventListener("pointermove", (event) => {
+            const touch = state.slotDrag.touch;
+            if (!touch || touch.pointerId !== event.pointerId) return;
+            const distance = Math.hypot(event.clientX - touch.startX, event.clientY - touch.startY);
+            if (distance < 10 && !touch.active) return;
+            event.preventDefault();
+            touch.active = true;
+            const sourceNode = els.photoSlots.querySelector(`[data-slot-index="${touch.source}"]`);
+            sourceNode?.classList.add("is-dragging");
+            const targetNode = document.elementFromPoint(event.clientX, event.clientY)?.closest(".photo-slot");
+            const target = targetNode ? Number(targetNode.dataset.slotIndex) : null;
+            touch.target = Number.isInteger(target) && target !== touch.source ? target : null;
+            if (touch.target !== null) setSlotDropTarget(touch.target);
+            else els.photoSlots.querySelectorAll(".is-drop-target").forEach((item) => item.classList.remove("is-drop-target"));
+          });
+          slotMain.addEventListener("pointerup", (event) => finishTouchSlotReorder(event));
+          slotMain.addEventListener("pointercancel", (event) => finishTouchSlotReorder(event));
+        }
+      
+        function finishTouchSlotReorder(event) {
+          const touch = state.slotDrag.touch;
+          if (!touch || touch.pointerId !== event.pointerId) return;
+          state.slotDrag.touch = null;
+          clearSlotDragClasses();
+          if (!touch.active) return;
+          state.slotDrag.ignoreClickUntil = Date.now() + 350;
+          if (touch.target !== null) swapSlots(touch.source, touch.target);
+        }
+      
+        function coordinateForPointer(event) {
+          const rect = canvas.getBoundingClientRect();
+          return { x: (event.clientX - rect.left) * SIZE.width / rect.width, y: (event.clientY - rect.top) * SIZE.height / rect.height };
+        }
+      
+        function slotAt(point) {
+          return layout().cells.findIndex((cell) => point.x >= cell.x && point.x <= cell.x + cell.width && point.y >= cell.y && point.y <= cell.y + cell.height);
+        }
+      
+        function startDrag(event) {
+          const point = coordinateForPointer(event);
+          const index = slotAt(point);
+          if (index < 0) return;
+          selectSlot(index);
+          if (!state.slots[index].image) return;
+          event.preventDefault();
+          canvas.setPointerCapture(event.pointerId);
+          state.isDragging = true;
+          state.drag = { pointerId: event.pointerId, x: point.x, y: point.y, offsetX: state.slots[index].offsetX, offsetY: state.slots[index].offsetY };
+          canvas.classList.add("is-dragging");
+        }
+      
+        function moveDrag(event) {
+          if (!state.isDragging || event.pointerId !== state.drag.pointerId || state.activeSlot === null) return;
+          const point = coordinateForPointer(event);
+          const slot = state.slots[state.activeSlot];
+          slot.offsetX = state.drag.offsetX + point.x - state.drag.x;
+          slot.offsetY = state.drag.offsetY + point.y - state.drag.y;
+          clampSlot(slot, layout().cells[state.activeSlot]);
+          refreshCanvas();
+        }
+      
+        function endDrag(event) {
+          if (!state.isDragging || event.pointerId !== state.drag.pointerId) return;
+          state.isDragging = false;
+          state.drag = null;
+          canvas.classList.remove("is-dragging");
+        }
+      
+        function startBoundaryDrag(event, column) {
+          event.preventDefault();
+          const handle = event.currentTarget;
+          handle.setPointerCapture(event.pointerId);
+          state.boundaryDrag = { pointerId: event.pointerId, column, handle };
+          handle.classList.add("is-dragging");
+        }
+      
+        function moveBoundaryDrag(event) {
+          const drag = state.boundaryDrag;
+          if (!drag || drag.pointerId !== event.pointerId) return;
+          event.preventDefault();
+          const point = coordinateForPointer(event);
+          const geometry = layout();
+          const topCell = drag.column === "left" ? geometry.cells[0] : geometry.cells[1];
+          const bottomCell = drag.column === "left" ? geometry.cells[2] : geometry.cells[3];
+          const usableHeight = topCell.height + bottomCell.height;
+          const ratio = (point.y - topCell.y - state.frame.gap / 2) / usableHeight * 100;
+          const key = drag.column === "left" ? "leftTopRatio" : "rightTopRatio";
+          state.frame[key] = Math.max(20, Math.min(80, ratio));
+          syncBoundaryControls();
+          refreshCanvas();
+        }
+      
+        function endBoundaryDrag(event) {
+          const drag = state.boundaryDrag;
+          if (!drag || drag.pointerId !== event.pointerId) return;
+          drag.handle.classList.remove("is-dragging");
+          state.boundaryDrag = null;
+        }
+      
+        function bindUI() {
+          els.photoUpload.addEventListener("change", (event) => handleBulkUpload(event.target.files));
+          els.aspectRatio.addEventListener("change", () => {
+            state.aspect = els.aspectRatio.value;
+            applyAspect();
+            refreshCanvas();
+          });
+          els.slotScale.addEventListener("input", () => {
+            if (state.activeSlot === null || !state.slots[state.activeSlot].image) return;
+            state.slots[state.activeSlot].scale = Number(els.slotScale.value);
+            clampSlot(state.slots[state.activeSlot], layout().cells[state.activeSlot]);
+            updateActiveControls();
+            refreshCanvas();
+          });
+          document.querySelectorAll("[data-frame-mode]").forEach((button) => button.addEventListener("click", () => {
+            state.frame.mode = button.dataset.frameMode;
+            document.querySelectorAll("[data-frame-mode]").forEach((item) => item.classList.toggle("is-active", item === button));
+            els.solidControls.hidden = state.frame.mode !== "solid";
+            els.gradientControls.hidden = state.frame.mode !== "gradient";
+            refreshCanvas();
+          }));
+          const frameBindings = [
+            [els.solidColor, "solid"], [els.colorA, "colorA"], [els.colorB, "colorB"], [els.angle, "angle"], [els.stopA, "stopA"], [els.stopB, "stopB"], [els.padding, "padding"], [els.verticalPadding, "verticalPadding"], [els.gap, "gap"], [els.leftTopRatio, "leftTopRatio"], [els.rightTopRatio, "rightTopRatio"],
+          ];
+          frameBindings.forEach(([input, key]) => input.addEventListener("input", () => {
+            state.frame[key] = input.type === "range" ? Number(input.value) : input.value;
+            els.angleValue.textContent = `${state.frame.angle}°`;
+            els.stopAValue.textContent = `${state.frame.stopA}%`;
+            els.stopBValue.textContent = `${state.frame.stopB}%`;
+            els.paddingValue.textContent = `${state.frame.padding} px`;
+            els.verticalPaddingValue.textContent = `${state.frame.verticalPadding} px`;
+            els.gapValue.textContent = `${state.frame.gap} px`;
+            syncBoundaryControls();
+            refreshCanvas();
+          }));
+          [[els.previewLeftHandle, "left"], [els.previewRightHandle, "right"]].forEach(([handle, column]) => {
+            handle.addEventListener("pointerdown", (event) => startBoundaryDrag(event, column));
+            handle.addEventListener("pointermove", moveBoundaryDrag);
+            handle.addEventListener("pointerup", endBoundaryDrag);
+            handle.addEventListener("pointercancel", endBoundaryDrag);
+          });
+          els.resetBoundaries.addEventListener("click", () => {
+            state.frame.leftTopRatio = 50;
+            state.frame.rightTopRatio = 50;
+            syncBoundaryControls();
+            refreshCanvas();
+          });
+          [els.topTitle, els.bottomTitle].forEach((input) => input.addEventListener("input", () => {
+            state.title.top = els.topTitle.value;
+            state.title.bottom = els.bottomTitle.value;
+            refreshCanvas();
+          }));
+          els.topTitleWeight.addEventListener("change", () => { state.title.topWeight = Number(els.topTitleWeight.value); refreshCanvas(); });
+          els.bottomTitleWeight.addEventListener("change", () => { state.title.bottomWeight = Number(els.bottomTitleWeight.value); refreshCanvas(); });
+          els.titleColor.addEventListener("input", () => { state.title.color = els.titleColor.value; refreshCanvas(); });
+          els.titleSize.addEventListener("input", () => { state.title.size = Number(els.titleSize.value); els.titleSizeValue.textContent = `${state.title.size} px`; refreshCanvas(); });
+          els.timestampEnabled.addEventListener("change", () => { state.timestamp.enabled = els.timestampEnabled.checked; els.timestampControls.hidden = !state.timestamp.enabled; refreshCanvas(); });
+          document.querySelectorAll("[data-timestamp-mode]").forEach((button) => button.addEventListener("click", () => {
+            state.timestamp.mode = button.dataset.timestampMode;
+            document.querySelectorAll("[data-timestamp-mode]").forEach((item) => item.classList.toggle("is-active", item === button));
+            els.dateField.hidden = state.timestamp.mode !== "date";
+            refreshCanvas();
+          }));
+          els.selectedDate.addEventListener("input", () => { state.timestamp.date = els.selectedDate.value; refreshCanvas(); });
+          document.querySelectorAll("input[name='timestampPosition']").forEach((input) => input.addEventListener("change", () => { state.timestamp.position = input.value; refreshCanvas(); }));
+          canvas.addEventListener("pointerdown", startDrag);
+          canvas.addEventListener("pointermove", moveDrag);
+          canvas.addEventListener("pointerup", endDrag);
+          canvas.addEventListener("pointercancel", endDrag);
+          els.download.addEventListener("click", downloadPng);
+        }
+      
+        function downloadPng() {
+          if (countImages() !== 4) return;
+          const downloadedAt = new Date();
+          render(exportCtx, false, downloadedAt);
+          offscreen.toBlob((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            const twoDigits = (value) => String(value).padStart(2, "0");
+            const date = `${downloadedAt.getFullYear()}${twoDigits(downloadedAt.getMonth() + 1)}${twoDigits(downloadedAt.getDate())}`;
+            const time = `${twoDigits(downloadedAt.getHours())}${twoDigits(downloadedAt.getMinutes())}${twoDigits(downloadedAt.getSeconds())}`;
+            link.download = `사진 뭉탱이_${date}_${time}.png`;
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 500);
+          }, "image/png");
+        }
+      
+        els.selectedDate.value = dateForInput();
+        state.timestamp.date = els.selectedDate.value;
+        bindUI();
+        applyAspect();
+        syncBoundaryControls();
+        updateSlotsUI();
+        updateActiveControls();
+        refreshCanvas();
+        window.addEventListener("resize", () => {
+          updatePreviewStage();
+          refreshCanvas();
+        });
+        if (document.fonts) {
+          Promise.all([
+            document.fonts.load("300 52px KimJeongcheolMyoungjo"),
+            document.fonts.load("400 52px KimJeongcheolMyoungjo"),
+            document.fonts.load("700 52px KimJeongcheolMyoungjo"),
+          ]).then(refreshCanvas).catch(() => {});
+        }
+        setInterval(() => { if (state.timestamp.enabled && state.timestamp.mode === "now") refreshCanvas(); }, 30_000);
+      })();
+      
+    </script>
+  </body>
+</html>
