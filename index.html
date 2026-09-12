@@ -45,7 +45,7 @@
       }
       
       * { box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
+      html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       body { margin: 0; min-width: 320px; background: var(--soft); color: var(--ink); }
       button, input { font: inherit; }
       button { cursor: pointer; }
@@ -56,15 +56,18 @@
       }
       .brand { color: var(--ink); text-decoration: none; font-family: Georgia, "Times New Roman", serif; font-weight: 900; font-size: 1.32rem; letter-spacing: .08em; }
       .site-header p { margin: 0; color: var(--muted); font-size: .87rem; }
-      .download-button { margin-left: auto; padding: .75rem 1.05rem; border: 0; border-radius: 99px; background: var(--ink); color: white; font-size: .9rem; font-weight: 750; transition: transform .18s, opacity .18s, background .18s; }
+      .header-upload { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; margin-left: auto; padding: .65rem .85rem; border: 1px solid var(--ink); border-radius: 99px; background: transparent; color: var(--ink); font-size: .8rem; font-weight: 750; cursor: pointer; }
+      .download-button { margin-left: 0; padding: .75rem 1.05rem; border: 0; border-radius: 99px; background: var(--ink); color: white; font-size: .9rem; font-weight: 750; transition: transform .18s, opacity .18s, background .18s; }
       .download-button:not(:disabled):hover { background: var(--accent-dark); transform: translateY(-1px); }
       .download-button:disabled { cursor: not-allowed; opacity: .42; }
       
       .workspace { max-width: 1540px; margin: 0 auto; padding: clamp(24px, 4vw, 58px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 470px); gap: clamp(26px, 4vw, 72px); align-items: start; }
       .preview-panel { min-width: 0; position: sticky; top: 108px; }
-      .preview-controls { display: grid; grid-template-columns: minmax(0, 190px) minmax(150px, 240px); align-items: end; justify-content: space-between; gap: 16px; margin: 0 auto 14px; }
+      .preview-controls { display: grid; grid-template-columns: minmax(0, 220px) minmax(150px, 240px); align-items: end; justify-content: space-between; gap: 16px; margin: 0 auto 14px; }
       .preview-control { min-width: 0; margin: 0; color: var(--muted); font-size: .68rem; font-weight: 750; letter-spacing: .04em; }
       .preview-control select { min-height: 38px; margin: 6px 0 0; padding: .45rem .55rem; font-size: .78rem; }
+      .preview-aspect-control { display: flex; align-items: center; gap: 8px; }
+      .preview-aspect-control select { flex: 1; margin: 0; }
       .preview-size-control { text-align: right; }
       .preview-size-control output { float: none; margin-left: 6px; }
       .preview-size-control input { margin: 6px 0 0; }
@@ -167,15 +170,18 @@
       }
       @media (max-width: 560px) {
         #collageCanvas { -webkit-tap-highlight-color: transparent; overscroll-behavior: contain; }
-        .site-header { min-height: 66px; gap: 12px; padding: 12px 16px; }
+        .site-header { min-height: 66px; gap: 8px; padding: 12px 16px; }
         .site-header p { display: none; }
-        .download-button { padding: .65rem .78rem; font-size: .8rem; }
+        .brand { font-size: 1.06rem; letter-spacing: .03em; }
+        .header-upload { min-height: 36px; padding: .5rem .58rem; font-size: .72rem; }
+        .download-button { padding: .6rem .68rem; font-size: .76rem; }
         .workspace { padding: 22px 15px 38px; gap: 28px; }
-        .preview-controls { width: 90vw; grid-template-columns: minmax(0, 1fr) minmax(115px, 42%); gap: 12px; }
-        .preview-control select { font-size: .74rem; }
-        .canvas-wrap, .preview-footer { width: min(90vw, 680px); }
+        .preview-controls { width: 80vw; grid-template-columns: minmax(0, 1fr) minmax(105px, 42%); gap: 12px; }
+        .preview-control select { font-size: 16px; }
+        .canvas-wrap, .preview-footer { width: min(80vw, 680px); }
         #dateField { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; }
-        #dateField input { width: 100%; margin: 0; font-size: 16px; }
+        input[type="text"], input[type="date"], select { font-size: 16px; }
+        #dateField input { width: 100%; margin: 0; }
         .control-section { padding: 22px 18px; }
         .two-column { gap: 12px; }
         .photo-slots { gap: 6px; }
@@ -187,6 +193,8 @@
     <header class="site-header">
       <a class="brand" href="#top" aria-label="사진 뭉탱이 홈">사진 뭉탱이</a>
       <p>4장의 순간을 한 장으로</p>
+      <label class="header-upload" for="photoUpload">사진 선택하기</label>
+      <input id="photoUpload" type="file" accept="image/*" multiple />
       <button id="downloadButton" class="download-button" type="button" disabled>
         PNG 다운로드
       </button>
@@ -195,12 +203,12 @@
     <main id="top" class="workspace">
       <section class="preview-panel" aria-label="콜라주 미리보기">
         <div class="preview-controls" aria-label="빠른 편집 도구">
-          <label class="preview-control" for="aspectRatio">사진 비율
+          <label class="preview-control preview-aspect-control" for="aspectRatio">비율
             <select id="aspectRatio">
-              <option value="square">1:1 · 1440 × 1440</option>
-              <option value="fourFive">4:5 · 1440 × 1800</option>
-              <option value="twoThree" selected>2:3 · 1440 × 2160</option>
-              <option value="nineSixteen">9:16 · 1440 × 2560</option>
+              <option value="square">1:1</option>
+              <option value="fourFive">4:5</option>
+              <option value="twoThree" selected>2:3</option>
+              <option value="nineSixteen">9:16</option>
             </select>
           </label>
           <label class="preview-control preview-size-control" for="titleSize">글자 크기 <output id="titleSizeValue" for="titleSize">52 px</output>
@@ -229,8 +237,6 @@
             </div>
             <span id="photoCount" class="count-badge">0 / 4</span>
           </div>
-          <label class="primary-upload" for="photoUpload">사진 선택하기 <span>최대 4장</span></label>
-          <input id="photoUpload" type="file" accept="image/*" multiple />
           <p id="uploadMessage" class="field-note">사진 4장을 선택해 주세요.</p>
           <p class="field-note">사진 슬롯을 끌어 놓으면 두 사진의 위치를 바꿀 수 있어요.</p>
           <div id="photoSlots" class="photo-slots" aria-label="사진 슬롯"></div>
