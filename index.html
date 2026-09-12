@@ -91,9 +91,17 @@
       .reset-boundaries { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 99px; padding: .42rem .7rem; background: var(--paper); color: var(--ink); font-size: .72rem; font-weight: 750; }
       .reset-boundaries:hover { border-color: var(--accent); color: var(--accent-dark); }
       
-      .controls { background: var(--paper); border: 1px solid var(--line); box-shadow: 0 14px 45px rgba(31, 37, 35, .06); }
+      .controls { background: transparent; border: 0; box-shadow: none; }
       .control-section { padding: 26px; border-bottom: 1px solid var(--line); }
       .control-section:last-child { border-bottom: 0; }
+      .control-carousel { min-width: 0; }
+      .control-card { display: none; background: var(--paper); border: 1px solid var(--line); box-shadow: 0 14px 45px rgba(31,37,35,.06); }
+      .control-card.is-active { display: block; }
+      .control-card.control-section { border-bottom: 1px solid var(--line); }
+      .card-navigation { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 10px; }
+      .card-navigation button { width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 50%; background: var(--paper); color: var(--ink); font-size: 1.15rem; line-height: 1; }
+      .card-navigation button:hover { border-color: var(--accent); color: var(--accent-dark); }
+      .card-position { margin: 0; color: var(--muted); font-size: .72rem; font-weight: 750; letter-spacing: .06em; }
       .section-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 17px; }
       .count-badge { min-width: 45px; padding: .34rem .45rem; border-radius: 99px; background: var(--ink); color: white; font-size: .7rem; text-align: center; font-weight: 750; }
       label { display: block; color: #303534; font-size: .78rem; font-weight: 730; letter-spacing: .01em; }
@@ -253,30 +261,15 @@
       </section>
 
       <aside class="controls" aria-label="콜라주 편집 설정">
-        <section class="control-section photos-section">
+        <div class="card-navigation" aria-label="설정 카드 탐색">
+          <button id="previousCard" type="button" aria-label="이전 설정 카드">←</button>
+          <p id="cardPosition" class="card-position" aria-live="polite">1 / 3 · 프레임</p>
+          <button id="nextCard" type="button" aria-label="다음 설정 카드">→</button>
+        </div>
+        <div class="control-carousel">
+        <section class="control-section control-card is-active" data-control-card="frame">
           <div class="section-heading">
-            <div>
-              <span class="eyebrow">01</span>
-              <h2>사진 4장</h2>
-            </div>
-            <span id="photoCount" class="count-badge">0 / 4</span>
-          </div>
-          <p id="uploadMessage" class="field-note">사진 4장을 선택해 주세요.</p>
-          <p class="field-note">사진 슬롯을 끌어 놓으면 두 사진의 위치를 바꿀 수 있어요.</p>
-          <div id="photoSlots" class="photo-slots" aria-label="사진 슬롯"></div>
-          <div class="crop-controls">
-            <div class="field-row">
-              <label for="slotScale">선택 사진 확대</label>
-              <output id="scaleValue" for="slotScale">100%</output>
-            </div>
-            <input id="slotScale" type="range" min="1" max="3" step="0.01" value="1" disabled />
-            <p class="field-note">사진 칸을 선택한 뒤, 미리보기에서 끌어 위치를 조절하세요.</p>
-          </div>
-        </section>
-
-        <section class="control-section">
-          <div class="section-heading">
-            <div><span class="eyebrow">02</span><h2>프레임</h2></div>
+            <div><span class="eyebrow">01</span><h2>프레임</h2></div>
           </div>
           <div class="segmented" role="group" aria-label="프레임 색상 방식">
             <button class="mode-button is-active" type="button" data-frame-mode="solid">단색</button>
@@ -314,8 +307,8 @@
           <p class="field-note">두 열의 상하 사진 경계를 각각 조절할 수 있어요.</p>
         </section>
 
-        <section class="control-section">
-          <div class="section-heading"><div><span class="eyebrow">03</span><h2>제목</h2></div></div>
+        <section class="control-section control-card" data-control-card="title">
+          <div class="section-heading"><div><span class="eyebrow">02</span><h2>제목</h2></div></div>
           <label for="topTitle">상단 중앙 제목</label>
           <input id="topTitle" type="text" maxlength="54" placeholder="예: MONO MANSION" />
           <label for="bottomTitle">하단 중앙 제목</label>
@@ -341,9 +334,9 @@
           </div>
         </section>
 
-        <section class="control-section timestamp-section">
+        <section class="control-section control-card timestamp-section" data-control-card="timestamp">
           <div class="section-heading">
-            <div><span class="eyebrow">04</span><h2>타임스탬프</h2></div>
+            <div><span class="eyebrow">03</span><h2>타임스탬프</h2></div>
             <label class="timestamp-toggle" for="timestampEnabled" aria-label="타임스탬프 표시" title="타임스탬프 표시"><input id="timestampEnabled" type="checkbox" checked /></label>
           </div>
           <div id="timestampControls">
@@ -358,18 +351,10 @@
             </div>
           </div>
         </section>
+        </div>
       </aside>
     </main>
 
-    <template id="slotTemplate">
-      <article class="photo-slot">
-        <button class="slot-main" type="button"><span class="slot-number"></span><span class="slot-label"></span></button>
-        <div class="slot-actions">
-          <label class="replace-label"><span>교체</span><input class="slot-file" type="file" accept="image/*" /></label>
-          <button class="remove-slot" type="button" aria-label="사진 삭제">×</button>
-        </div>
-      </article>
-    </template>
     <script>
       (() => {
         "use strict";
@@ -403,7 +388,7 @@
           previewTouch: null,
           previewSwap: null,
           paletteTarget: "colorA",
-          slotDrag: { nativeSource: null, touch: null, ignoreClickUntil: 0 },
+          cardIndex: 0,
           boundaryDrag: null,
           aspect: "twoThree",
           slots: Array.from({ length: 4 }, () => ({ image: null, name: "", scale: 1, offsetX: 0, offsetY: 0 })),
@@ -414,15 +399,14 @@
       
         const $ = (selector) => document.querySelector(selector);
         const els = {
-          photoUpload: $("#photoUpload"), photoSlots: $("#photoSlots"), slotTemplate: $("#slotTemplate"), photoCount: $("#photoCount"), uploadMessage: $("#uploadMessage"),
-          slotScale: $("#slotScale"), scaleValue: $("#scaleValue"),
+          photoUpload: $("#photoUpload"),
           solidControls: $("#solidControls"), gradientControls: $("#gradientControls"),
           solidPalette: $("#solidPalette"), gradientPalette: $("#gradientPalette"), randomGradient: $("#randomGradient"), angle: $("#gradientAngle"), angleValue: $("#angleValue"),
           stopA: $("#gradientStopA"), stopB: $("#gradientStopB"), stopAValue: $("#stopAValue"), stopBValue: $("#stopBValue"),
           padding: $("#framePadding"), verticalPadding: $("#verticalPadding"), gap: $("#gridGap"), leftTopRatio: $("#leftTopRatio"), rightTopRatio: $("#rightTopRatio"), paddingValue: $("#paddingValue"), verticalPaddingValue: $("#verticalPaddingValue"), gapValue: $("#gapValue"), leftTopRatioValue: $("#leftTopRatioValue"), rightTopRatioValue: $("#rightTopRatioValue"),
           topTitle: $("#topTitle"), bottomTitle: $("#bottomTitle"), topTitleWeight: $("#topTitleWeight"), bottomTitleWeight: $("#bottomTitleWeight"), titleColor: $("#titleColor"), titleSize: $("#titleSize"), titleSizeValue: $("#titleSizeValue"),
           timestampEnabled: $("#timestampEnabled"), timestampControls: $("#timestampControls"), selectedDate: $("#selectedDate"), dateField: $("#dateField"),
-          download: $("#downloadButton"), aspectRatio: $("#aspectRatio"), canvasCaption: $("#canvasCaption"), canvasWrap: $(".canvas-wrap"), canvasStage: $("#canvasStage"), previewLeftHandle: $("#previewLeftHandle"), previewRightHandle: $("#previewRightHandle"), previewSwapNotice: $("#previewSwapNotice"), previewSlotUpload: $("#previewSlotUpload"), previewReplacePhoto: $("#previewReplacePhoto"), previewRemovePhoto: $("#previewRemovePhoto"), cancelPreviewSwap: $("#cancelPreviewSwap"), resetBoundaries: $("#resetBoundaries"),
+          download: $("#downloadButton"), aspectRatio: $("#aspectRatio"), canvasCaption: $("#canvasCaption"), canvasWrap: $(".canvas-wrap"), canvasStage: $("#canvasStage"), previewLeftHandle: $("#previewLeftHandle"), previewRightHandle: $("#previewRightHandle"), previewSwapNotice: $("#previewSwapNotice"), previewSlotUpload: $("#previewSlotUpload"), previewReplacePhoto: $("#previewReplacePhoto"), previewRemovePhoto: $("#previewRemovePhoto"), cancelPreviewSwap: $("#cancelPreviewSwap"), resetBoundaries: $("#resetBoundaries"), previousCard: $("#previousCard"), nextCard: $("#nextCard"), cardPosition: $("#cardPosition"),
         };
       
         function dateForInput(date = new Date()) {
@@ -488,6 +472,20 @@
           els.paddingValue.textContent = `${state.frame.padding} px`;
           els.verticalPaddingValue.textContent = `${state.frame.verticalPadding} px`;
           els.gapValue.textContent = `${state.frame.gap} px`;
+        }
+
+        function updateCardCarousel() {
+          const cards = Array.from(document.querySelectorAll("[data-control-card]"));
+          if (!cards.length) return;
+          state.cardIndex = (state.cardIndex + cards.length) % cards.length;
+          cards.forEach((card, index) => card.classList.toggle("is-active", index === state.cardIndex));
+          const title = cards[state.cardIndex].querySelector("h2")?.textContent || "설정";
+          els.cardPosition.textContent = `${state.cardIndex + 1} / ${cards.length} · ${title}`;
+        }
+
+        function moveCard(direction) {
+          state.cardIndex += direction;
+          updateCardCarousel();
         }
 
         function buildPalette(container, selectedColor, onSelect) {
@@ -713,41 +711,11 @@
         }
       
         function updateSlotsUI() {
-          els.photoSlots.innerHTML = "";
-          state.slots.forEach((slot, index) => {
-            const node = els.slotTemplate.content.firstElementChild.cloneNode(true);
-            node.dataset.slotIndex = index;
-            node.draggable = Boolean(slot.image) && !window.matchMedia("(hover: none) and (pointer: coarse)").matches;
-            node.classList.toggle("has-image", Boolean(slot.image));
-            node.classList.toggle("is-selected", state.activeSlot === index);
-            node.querySelector(".slot-number").textContent = `0${index + 1}`;
-            node.querySelector(".slot-label").textContent = slot.image ? slot.name : "사진 없음";
-            const slotMain = node.querySelector(".slot-main");
-            slotMain.addEventListener("click", () => {
-              if (Date.now() < state.slotDrag.ignoreClickUntil) return;
-              selectSlot(index);
-            });
-            bindSlotReorder(node, slotMain, index);
-            node.querySelector(".slot-file").addEventListener("change", (event) => {
-              const [file] = event.target.files;
-              if (file) loadFileIntoSlot(file, index);
-            });
-            node.querySelector(".remove-slot").addEventListener("click", () => removeSlot(index));
-            els.photoSlots.append(node);
-          });
-          const count = countImages();
-          els.photoCount.textContent = `${count} / 4`;
-          els.download.disabled = count !== 4;
-          els.uploadMessage.textContent = count === 4 ? "준비 완료! 사진을 클릭해 구도를 조절하세요." : `${4 - count}장의 사진이 더 필요해요.`;
-          els.uploadMessage.classList.toggle("is-warning", count > 0 && count < 4);
+          els.download.disabled = countImages() !== 4;
         }
       
         function updateActiveControls() {
-          const slot = state.activeSlot !== null ? state.slots[state.activeSlot] : null;
-          const enabled = Boolean(slot?.image);
-          els.slotScale.disabled = !enabled;
-          els.slotScale.value = enabled ? slot.scale : 1;
-          els.scaleValue.textContent = enabled ? `${Math.round(slot.scale * 100)}%` : "—";
+          // 사진 확대와 위치 조절은 미리보기의 핀치·드래그 제스처로 직접 수행합니다.
         }
       
         function selectSlot(index) {
@@ -785,18 +753,6 @@
           els.photoUpload.value = "";
         }
       
-        function clearSlotDragClasses() {
-          els.photoSlots.querySelectorAll(".is-dragging, .is-drop-target").forEach((node) => {
-            node.classList.remove("is-dragging", "is-drop-target");
-          });
-        }
-      
-        function setSlotDropTarget(index) {
-          els.photoSlots.querySelectorAll(".photo-slot").forEach((node) => {
-            node.classList.toggle("is-drop-target", Number(node.dataset.slotIndex) === index);
-          });
-        }
-      
         function swapSlots(first, second) {
           if (first === second || !state.slots[first].image) return;
           [state.slots[first], state.slots[second]] = [state.slots[second], state.slots[first]];
@@ -805,77 +761,6 @@
           updateSlotsUI();
           updateActiveControls();
           refreshCanvas();
-        }
-      
-        function bindSlotReorder(node, slotMain, index) {
-          node.addEventListener("dragstart", (event) => {
-            if (!state.slots[index].image) {
-              event.preventDefault();
-              return;
-            }
-            state.slotDrag.nativeSource = index;
-            event.dataTransfer?.setData("text/plain", String(index));
-            if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
-            node.classList.add("is-dragging");
-          });
-          node.addEventListener("dragover", (event) => {
-            const source = state.slotDrag.nativeSource;
-            if (source === null || source === index) return;
-            event.preventDefault();
-            if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
-            setSlotDropTarget(index);
-          });
-          node.addEventListener("dragleave", (event) => {
-            if (!node.contains(event.relatedTarget)) node.classList.remove("is-drop-target");
-          });
-          node.addEventListener("drop", (event) => {
-            event.preventDefault();
-            const sourceText = event.dataTransfer?.getData("text/plain");
-            const source = state.slotDrag.nativeSource ?? (sourceText ? Number(sourceText) : null);
-            clearSlotDragClasses();
-            state.slotDrag.nativeSource = null;
-            if (Number.isInteger(source)) swapSlots(source, index);
-          });
-          node.addEventListener("dragend", () => {
-            state.slotDrag.nativeSource = null;
-            clearSlotDragClasses();
-          });
-      
-          slotMain.addEventListener("pointerdown", (event) => {
-            if (event.pointerType !== "touch" || !state.slots[index].image) return;
-            slotMain.setPointerCapture(event.pointerId);
-            state.slotDrag.touch = { pointerId: event.pointerId, source: index, startX: event.clientX, startY: event.clientY, active: false, target: null };
-          });
-          slotMain.addEventListener("pointermove", (event) => {
-            const touch = state.slotDrag.touch;
-            if (!touch || touch.pointerId !== event.pointerId) return;
-            const distance = Math.hypot(event.clientX - touch.startX, event.clientY - touch.startY);
-            if (distance < 12 && !touch.active) return;
-            event.preventDefault();
-            touch.active = true;
-            const sourceNode = els.photoSlots.querySelector(`[data-slot-index="${touch.source}"]`);
-            sourceNode?.classList.add("is-dragging");
-            const targetNode = document.elementFromPoint(event.clientX, event.clientY)?.closest(".photo-slot");
-            const target = targetNode ? Number(targetNode.dataset.slotIndex) : null;
-            touch.target = Number.isInteger(target) && target !== touch.source ? target : null;
-            if (touch.target !== null) setSlotDropTarget(touch.target);
-            else els.photoSlots.querySelectorAll(".is-drop-target").forEach((item) => item.classList.remove("is-drop-target"));
-          });
-          slotMain.addEventListener("pointerup", (event) => finishTouchSlotReorder(event));
-          slotMain.addEventListener("pointercancel", (event) => finishTouchSlotReorder(event));
-          slotMain.addEventListener("lostpointercapture", (event) => finishTouchSlotReorder(event));
-          slotMain.addEventListener("selectstart", (event) => event.preventDefault());
-          slotMain.addEventListener("contextmenu", (event) => event.preventDefault());
-        }
-      
-        function finishTouchSlotReorder(event) {
-          const touch = state.slotDrag.touch;
-          if (!touch || touch.pointerId !== event.pointerId) return;
-          state.slotDrag.touch = null;
-          clearSlotDragClasses();
-          if (!touch.active) return;
-          state.slotDrag.ignoreClickUntil = Date.now() + 350;
-          if (event.type === "pointerup" && touch.target !== null) swapSlots(touch.source, touch.target);
         }
       
         function coordinateForPointer(event) {
@@ -997,8 +882,6 @@
                 const slot = state.slots[state.activeSlot];
                 slot.scale = Math.max(1, Math.min(3, state.pinch.startScale * currentDistance / state.pinch.startDistance));
                 clampSlot(slot, layout().cells[state.activeSlot]);
-                els.slotScale.value = slot.scale;
-                els.scaleValue.textContent = `${Math.round(slot.scale * 100)}%`;
                 refreshCanvas();
               }
               event.preventDefault();
@@ -1071,13 +954,8 @@
             applyAspect();
             refreshCanvas();
           });
-          els.slotScale.addEventListener("input", () => {
-            if (state.activeSlot === null || !state.slots[state.activeSlot].image) return;
-            state.slots[state.activeSlot].scale = Number(els.slotScale.value);
-            clampSlot(state.slots[state.activeSlot], layout().cells[state.activeSlot]);
-            updateActiveControls();
-            refreshCanvas();
-          });
+          els.previousCard.addEventListener("click", () => moveCard(-1));
+          els.nextCard.addEventListener("click", () => moveCard(1));
           document.querySelectorAll("[data-frame-mode]").forEach((button) => button.addEventListener("click", () => {
             state.frame.mode = button.dataset.frameMode;
             document.querySelectorAll("[data-frame-mode]").forEach((item) => item.classList.toggle("is-active", item === button));
@@ -1173,6 +1051,7 @@
         applyAspect();
         updateFrameOutputs();
         updatePaletteUI();
+        updateCardCarousel();
         syncBoundaryControls();
         updateSlotsUI();
         updateActiveControls();
