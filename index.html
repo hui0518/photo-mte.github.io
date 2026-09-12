@@ -70,7 +70,7 @@
       .preview-hint { max-width: 230px; margin: 0; color: var(--muted); font-size: .83rem; line-height: 1.5; text-align: right; }
       .canvas-wrap { width: 100%; height: min(62vh, 640px); margin: 0 auto; display: flex; align-items: center; justify-content: center; }
       .canvas-stage { position: relative; flex: 0 0 auto; line-height: 0; }
-      #collageCanvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: default; background: #fff; box-shadow: 0 22px 55px rgba(25, 30, 29, .15); }
+      #collageCanvas { display: block; width: 100%; height: 100%; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; cursor: default; background: #fff; box-shadow: 0 22px 55px rgba(25, 30, 29, .15); }
       #collageCanvas.is-draggable { cursor: grab; }
       #collageCanvas.is-dragging { cursor: grabbing; }
       .preview-boundary-handle { position: absolute; z-index: 3; height: 22px; margin: 0; padding: 0; border: 0; background: transparent; cursor: ns-resize; touch-action: none; transform: translateY(-50%); }
@@ -105,7 +105,8 @@
       .photo-slot.is-selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(232,104,68,.16); }
       .photo-slot.is-dragging { opacity: .46; transform: scale(.97); }
       .photo-slot.is-drop-target { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(232,104,68,.28); }
-      .slot-main { width: 100%; min-height: 39px; display: flex; gap: 7px; align-items: center; padding: .45rem .55rem; border: 0; background: transparent; color: var(--ink); text-align: left; touch-action: none; }
+      .slot-main, .slot-main * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-user-drag: none; }
+      .slot-main { width: 100%; min-height: 39px; display: flex; gap: 7px; align-items: center; padding: .45rem .55rem; border: 0; background: transparent; color: var(--ink); text-align: left; touch-action: none; -webkit-tap-highlight-color: transparent; }
       .slot-number { color: var(--accent-dark); font-size: .72rem; font-weight: 800; }
       .slot-label { min-width: 0; overflow: hidden; color: var(--muted); font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
       .photo-slot.has-image .slot-label { color: var(--ink); font-weight: 700; }
@@ -150,9 +151,13 @@
         .canvas-wrap { width: min(100%, 680px); height: auto; }
         .preview-footer { width: min(100%, 680px); }
       }
-      @media (max-width: 560px) {
+      @media (hover: none) and (pointer: coarse) {
+        .preview-boundary-handle { height: 48px; -webkit-tap-highlight-color: transparent; }
         .preview-boundary-handle::after { content: "↕"; position: absolute; top: 50%; left: 50%; display: grid; width: 18px; height: 18px; place-items: center; border-radius: 50%; background: rgba(82, 87, 86, .28); color: rgba(255, 255, 255, .9); font-family: system-ui, sans-serif; font-size: 11px; font-weight: 700; line-height: 1; pointer-events: none; transform: translate(-50%, -50%); transition: background .15s ease, transform .15s ease; }
         .preview-boundary-handle.is-dragging::after { background: rgba(82, 87, 86, .55); transform: translate(-50%, -50%) scale(1.08); }
+      }
+      @media (max-width: 560px) {
+        #collageCanvas { -webkit-tap-highlight-color: transparent; overscroll-behavior: contain; }
         .site-header { min-height: 66px; gap: 12px; padding: 12px 16px; }
         .site-header p { display: none; }
         .download-button { padding: .65rem .78rem; font-size: .8rem; }
@@ -344,6 +349,8 @@
           activeSlot: null,
           isDragging: false,
           drag: null,
+          touchPoints: new Map(),
+          pinch: null,
           slotDrag: { nativeSource: null, touch: null, ignoreClickUntil: 0 },
           boundaryDrag: null,
           aspect: "twoThree",
@@ -583,7 +590,7 @@
           state.slots.forEach((slot, index) => {
             const node = els.slotTemplate.content.firstElementChild.cloneNode(true);
             node.dataset.slotIndex = index;
-            node.draggable = Boolean(slot.image);
+            node.draggable = Boolean(slot.image) && !window.matchMedia("(hover: none) and (pointer: coarse)").matches;
             node.classList.toggle("has-image", Boolean(slot.image));
             node.classList.toggle("is-selected", state.activeSlot === index);
             node.querySelector(".slot-number").textContent = `0${index + 1}`;
@@ -716,7 +723,7 @@
             const touch = state.slotDrag.touch;
             if (!touch || touch.pointerId !== event.pointerId) return;
             const distance = Math.hypot(event.clientX - touch.startX, event.clientY - touch.startY);
-            if (distance < 10 && !touch.active) return;
+            if (distance < 12 && !touch.active) return;
             event.preventDefault();
             touch.active = true;
             const sourceNode = els.photoSlots.querySelector(`[data-slot-index="${touch.source}"]`);
@@ -729,6 +736,9 @@
           });
           slotMain.addEventListener("pointerup", (event) => finishTouchSlotReorder(event));
           slotMain.addEventListener("pointercancel", (event) => finishTouchSlotReorder(event));
+          slotMain.addEventListener("lostpointercapture", (event) => finishTouchSlotReorder(event));
+          slotMain.addEventListener("selectstart", (event) => event.preventDefault());
+          slotMain.addEventListener("contextmenu", (event) => event.preventDefault());
         }
       
         function finishTouchSlotReorder(event) {
@@ -738,7 +748,7 @@
           clearSlotDragClasses();
           if (!touch.active) return;
           state.slotDrag.ignoreClickUntil = Date.now() + 350;
-          if (touch.target !== null) swapSlots(touch.source, touch.target);
+          if (event.type === "pointerup" && touch.target !== null) swapSlots(touch.source, touch.target);
         }
       
         function coordinateForPointer(event) {
@@ -751,6 +761,23 @@
         }
       
         function startDrag(event) {
+          if (event.pointerType === "touch") {
+            state.touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            if (state.touchPoints.size === 2 && state.activeSlot !== null && state.slots[state.activeSlot].image) {
+              const points = Array.from(state.touchPoints.entries());
+              const startDistance = Math.hypot(points[1][1].x - points[0][1].x, points[1][1].y - points[0][1].y);
+              if (startDistance > 0) {
+                state.isDragging = false;
+                state.drag = null;
+                canvas.classList.remove("is-dragging");
+                state.pinch = { ids: new Set(points.map(([id]) => id)), startDistance, startScale: state.slots[state.activeSlot].scale };
+                canvas.setPointerCapture(event.pointerId);
+                event.preventDefault();
+                return;
+              }
+            }
+          }
+          if (state.pinch) return;
           const point = coordinateForPointer(event);
           const index = slotAt(point);
           if (index < 0) return;
@@ -764,6 +791,23 @@
         }
       
         function moveDrag(event) {
+          if (event.pointerType === "touch" && state.touchPoints.has(event.pointerId)) {
+            state.touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            if (state.pinch?.ids.has(event.pointerId) && state.activeSlot !== null) {
+              const points = Array.from(state.touchPoints.entries()).filter(([id]) => state.pinch.ids.has(id));
+              if (points.length === 2) {
+                const currentDistance = Math.hypot(points[1][1].x - points[0][1].x, points[1][1].y - points[0][1].y);
+                const slot = state.slots[state.activeSlot];
+                slot.scale = Math.max(1, Math.min(3, state.pinch.startScale * currentDistance / state.pinch.startDistance));
+                clampSlot(slot, layout().cells[state.activeSlot]);
+                els.slotScale.value = slot.scale;
+                els.scaleValue.textContent = `${Math.round(slot.scale * 100)}%`;
+                refreshCanvas();
+              }
+              event.preventDefault();
+              return;
+            }
+          }
           if (!state.isDragging || event.pointerId !== state.drag.pointerId || state.activeSlot === null) return;
           const point = coordinateForPointer(event);
           const slot = state.slots[state.activeSlot];
@@ -774,6 +818,10 @@
         }
       
         function endDrag(event) {
+          if (event.pointerType === "touch") {
+            state.touchPoints.delete(event.pointerId);
+            if (state.pinch?.ids.has(event.pointerId)) state.pinch = null;
+          }
           if (!state.isDragging || event.pointerId !== state.drag.pointerId) return;
           state.isDragging = false;
           state.drag = null;
@@ -880,6 +928,9 @@
           canvas.addEventListener("pointermove", moveDrag);
           canvas.addEventListener("pointerup", endDrag);
           canvas.addEventListener("pointercancel", endDrag);
+          ["gesturestart", "gesturechange", "gestureend"].forEach((type) => {
+            canvas.addEventListener(type, (event) => event.preventDefault(), { passive: false });
+          });
           els.download.addEventListener("click", downloadPng);
         }
       
