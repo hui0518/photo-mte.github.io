@@ -135,6 +135,20 @@
       .color-row { min-height: 44px; display: flex; align-items: center; justify-content: space-between; }
       .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
       .color-field { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .palette-label { display: block; margin: 0 0 10px; color: #303534; font-size: .78rem; font-weight: 730; letter-spacing: .01em; }
+      .frame-palette { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+      .palette-swatch { position: relative; aspect-ratio: 1; min-height: 30px; padding: 0; border: 2px solid transparent; border-radius: 50%; background: var(--swatch); box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+      .palette-swatch:hover { transform: scale(1.07); }
+      .palette-swatch.is-selected { border-color: var(--ink); box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink); }
+      .palette-swatch.is-selected::after { content: "✓"; position: absolute; inset: 0; display: grid; place-items: center; color: white; font-size: .85rem; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+      .gradient-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+      .gradient-targets { display: inline-flex; gap: 4px; padding: 4px; border-radius: 8px; background: #e6e8e3; }
+      .gradient-target { min-height: 30px; padding: .38rem .6rem; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font-size: .72rem; font-weight: 750; }
+      .gradient-target.is-active { background: white; color: var(--ink); box-shadow: 0 1px 3px rgba(25,30,29,.1); }
+      .random-gradient { flex: 0 0 auto; min-height: 34px; padding: .45rem .65rem; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--ink); font-size: .72rem; font-weight: 750; }
+      .random-gradient:hover { border-color: var(--accent); color: var(--accent-dark); }
+      .preview-swap-notice { position: absolute; z-index: 5; top: 12px; left: 50%; display: flex; align-items: center; gap: 9px; padding: 7px 8px 7px 12px; border-radius: 99px; background: rgba(24,27,27,.78); color: white; font-size: .72rem; font-weight: 750; line-height: 1; white-space: nowrap; transform: translateX(-50%); box-shadow: 0 4px 18px rgba(0,0,0,.16); }
+      .preview-swap-notice button { min-height: 26px; padding: .28rem .5rem; border: 1px solid rgba(255,255,255,.42); border-radius: 99px; background: transparent; color: white; font-size: .68rem; font-weight: 750; }
       .gradient-controls > label { display: block; margin-top: 17px; }
       .gradient-controls .two-column > label:not(.color-field) { font-size: .74rem; }
       .spacing-controls { margin-top: 18px; }
@@ -179,6 +193,7 @@
         .preview-controls { width: 80vw; grid-template-columns: minmax(0, 1fr) minmax(105px, 42%); gap: 12px; }
         .preview-control select { font-size: 16px; }
         .canvas-wrap, .preview-footer { width: min(80vw, 680px); }
+        .preview-swap-notice { top: 8px; font-size: .68rem; }
         #dateField { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; }
         input[type="text"], input[type="date"], select { font-size: 16px; }
         #dateField input { width: 100%; margin: 0; }
@@ -220,6 +235,10 @@
             <canvas id="collageCanvas" width="1440" height="2160" aria-label="편집 중인 2×2 콜라주"></canvas>
             <button id="previewLeftHandle" class="preview-boundary-handle" type="button" aria-label="왼쪽 열 사진 경계 드래그 핸들"></button>
             <button id="previewRightHandle" class="preview-boundary-handle" type="button" aria-label="오른쪽 열 사진 경계 드래그 핸들"></button>
+            <div id="previewSwapNotice" class="preview-swap-notice" hidden aria-live="polite">
+              <span>바꿀 사진을 탭하세요</span>
+              <button id="cancelPreviewSwap" type="button">취소</button>
+            </div>
           </div>
         </div>
         <div class="preview-footer">
@@ -258,15 +277,19 @@
             <button class="mode-button is-active" type="button" data-frame-mode="solid">단색</button>
             <button class="mode-button" type="button" data-frame-mode="gradient">그라디언트</button>
           </div>
-          <div id="solidControls" class="color-row">
-            <label for="solidColor">프레임 색상</label>
-            <input id="solidColor" type="color" value="#f7f7f3" />
+          <div id="solidControls">
+            <span class="palette-label">프레임 색상</span>
+            <div id="solidPalette" class="frame-palette" role="group" aria-label="프레임 색상 팔레트"></div>
           </div>
           <div id="gradientControls" class="gradient-controls" hidden>
-            <div class="two-column">
-              <label class="color-field" for="gradientColorA">시작 색상<input id="gradientColorA" type="color" value="#f1d7c9" /></label>
-              <label class="color-field" for="gradientColorB">끝 색상<input id="gradientColorB" type="color" value="#c7dce3" /></label>
+            <div class="gradient-toolbar">
+              <div class="gradient-targets" role="group" aria-label="그라디언트 색상 대상">
+                <button class="gradient-target is-active" type="button" data-gradient-target="colorA">시작 색</button>
+                <button class="gradient-target" type="button" data-gradient-target="colorB">끝 색</button>
+              </div>
+              <button id="randomGradient" class="random-gradient" type="button">랜덤 조합</button>
             </div>
+            <div id="gradientPalette" class="frame-palette" role="group" aria-label="그라디언트 색상 팔레트"></div>
             <label for="gradientAngle">방향 <output id="angleValue" for="gradientAngle">135°</output></label>
             <input id="gradientAngle" type="range" min="0" max="360" value="135" />
             <div class="two-column">
@@ -353,6 +376,12 @@
           twoThree: { height: 2160, label: "2:3" },
           nineSixteen: { height: 2560, label: "9:16" },
         };
+        const FRAME_PALETTE = [
+          "#F8F6F1", "#EEE8DF", "#E7D6C6", "#F1C7BE", "#E8B7A6",
+          "#D6C5E8", "#BFC8E8", "#B5D7E7", "#B9DDD0", "#CFE3B7",
+          "#F3D35B", "#E9AE55", "#D87F5B", "#C35D5D", "#9B6655",
+          "#53656A", "#344E5C", "#526B45", "#7C6B98", "#2E3133",
+        ];
         const canvas = document.querySelector("#collageCanvas");
         const ctx = canvas.getContext("2d");
         const offscreen = document.createElement("canvas");
@@ -366,11 +395,14 @@
           drag: null,
           touchPoints: new Map(),
           pinch: null,
+          previewTouch: null,
+          previewSwap: null,
+          paletteTarget: "colorA",
           slotDrag: { nativeSource: null, touch: null, ignoreClickUntil: 0 },
           boundaryDrag: null,
           aspect: "twoThree",
           slots: Array.from({ length: 4 }, () => ({ image: null, name: "", scale: 1, offsetX: 0, offsetY: 0 })),
-          frame: { mode: "solid", solid: "#f7f7f3", colorA: "#f1d7c9", colorB: "#c7dce3", stopA: 0, stopB: 100, angle: 135, padding: 50, verticalPadding: 50, gap: 16, leftTopRatio: 50, rightTopRatio: 50 },
+          frame: { mode: "solid", solid: "#F8F6F1", colorA: "#F1C7BE", colorB: "#B5D7E7", stopA: 0, stopB: 100, angle: 135, padding: 50, verticalPadding: 50, gap: 16, leftTopRatio: 50, rightTopRatio: 50 },
           title: { top: "", bottom: "", topWeight: 400, bottomWeight: 400, color: "#151515", size: 52 },
           timestamp: { enabled: true, mode: "now", date: "", position: "right" },
         };
@@ -380,12 +412,12 @@
           photoUpload: $("#photoUpload"), photoSlots: $("#photoSlots"), slotTemplate: $("#slotTemplate"), photoCount: $("#photoCount"), uploadMessage: $("#uploadMessage"),
           slotScale: $("#slotScale"), scaleValue: $("#scaleValue"),
           solidControls: $("#solidControls"), gradientControls: $("#gradientControls"),
-          solidColor: $("#solidColor"), colorA: $("#gradientColorA"), colorB: $("#gradientColorB"), angle: $("#gradientAngle"), angleValue: $("#angleValue"),
+          solidPalette: $("#solidPalette"), gradientPalette: $("#gradientPalette"), randomGradient: $("#randomGradient"), angle: $("#gradientAngle"), angleValue: $("#angleValue"),
           stopA: $("#gradientStopA"), stopB: $("#gradientStopB"), stopAValue: $("#stopAValue"), stopBValue: $("#stopBValue"),
           padding: $("#framePadding"), verticalPadding: $("#verticalPadding"), gap: $("#gridGap"), leftTopRatio: $("#leftTopRatio"), rightTopRatio: $("#rightTopRatio"), paddingValue: $("#paddingValue"), verticalPaddingValue: $("#verticalPaddingValue"), gapValue: $("#gapValue"), leftTopRatioValue: $("#leftTopRatioValue"), rightTopRatioValue: $("#rightTopRatioValue"),
           topTitle: $("#topTitle"), bottomTitle: $("#bottomTitle"), topTitleWeight: $("#topTitleWeight"), bottomTitleWeight: $("#bottomTitleWeight"), titleColor: $("#titleColor"), titleSize: $("#titleSize"), titleSizeValue: $("#titleSizeValue"),
           timestampEnabled: $("#timestampEnabled"), timestampControls: $("#timestampControls"), selectedDate: $("#selectedDate"), dateField: $("#dateField"),
-          download: $("#downloadButton"), aspectRatio: $("#aspectRatio"), canvasCaption: $("#canvasCaption"), canvasWrap: $(".canvas-wrap"), canvasStage: $("#canvasStage"), previewLeftHandle: $("#previewLeftHandle"), previewRightHandle: $("#previewRightHandle"), resetBoundaries: $("#resetBoundaries"),
+          download: $("#downloadButton"), aspectRatio: $("#aspectRatio"), canvasCaption: $("#canvasCaption"), canvasWrap: $(".canvas-wrap"), canvasStage: $("#canvasStage"), previewLeftHandle: $("#previewLeftHandle"), previewRightHandle: $("#previewRightHandle"), previewSwapNotice: $("#previewSwapNotice"), cancelPreviewSwap: $("#cancelPreviewSwap"), resetBoundaries: $("#resetBoundaries"),
         };
       
         function dateForInput(date = new Date()) {
@@ -442,6 +474,65 @@
           els.rightTopRatio.value = state.frame.rightTopRatio;
           els.leftTopRatioValue.textContent = `${state.frame.leftTopRatio}%`;
           els.rightTopRatioValue.textContent = `${state.frame.rightTopRatio}%`;
+        }
+
+        function updateFrameOutputs() {
+          els.angleValue.textContent = `${state.frame.angle}°`;
+          els.stopAValue.textContent = `${state.frame.stopA}%`;
+          els.stopBValue.textContent = `${state.frame.stopB}%`;
+          els.paddingValue.textContent = `${state.frame.padding} px`;
+          els.verticalPaddingValue.textContent = `${state.frame.verticalPadding} px`;
+          els.gapValue.textContent = `${state.frame.gap} px`;
+        }
+
+        function buildPalette(container, selectedColor, onSelect) {
+          container.innerHTML = "";
+          FRAME_PALETTE.forEach((color) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "palette-swatch";
+            button.style.setProperty("--swatch", color);
+            button.classList.toggle("is-selected", color.toLowerCase() === selectedColor.toLowerCase());
+            button.setAttribute("aria-label", `${color} 선택`);
+            button.setAttribute("aria-pressed", String(color.toLowerCase() === selectedColor.toLowerCase()));
+            button.addEventListener("click", () => onSelect(color));
+            container.append(button);
+          });
+        }
+
+        function updatePaletteUI() {
+          buildPalette(els.solidPalette, state.frame.solid, (color) => {
+            state.frame.solid = color;
+            updatePaletteUI();
+            refreshCanvas();
+          });
+          buildPalette(els.gradientPalette, state.frame[state.paletteTarget], (color) => {
+            state.frame[state.paletteTarget] = color;
+            updatePaletteUI();
+            refreshCanvas();
+          });
+          document.querySelectorAll("[data-gradient-target]").forEach((button) => {
+            const active = button.dataset.gradientTarget === state.paletteTarget;
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+          });
+        }
+
+        function randomizeGradient() {
+          const firstIndex = Math.floor(Math.random() * FRAME_PALETTE.length);
+          let secondIndex = Math.floor(Math.random() * (FRAME_PALETTE.length - 1));
+          if (secondIndex >= firstIndex) secondIndex += 1;
+          state.frame.colorA = FRAME_PALETTE[firstIndex];
+          state.frame.colorB = FRAME_PALETTE[secondIndex];
+          state.frame.stopA = Math.floor(Math.random() * 41);
+          state.frame.stopB = 60 + Math.floor(Math.random() * 41);
+          state.frame.angle = Math.floor(Math.random() * 360);
+          els.angle.value = state.frame.angle;
+          els.stopA.value = state.frame.stopA;
+          els.stopB.value = state.frame.stopB;
+          updateFrameOutputs();
+          updatePaletteUI();
+          refreshCanvas();
         }
       
         function formatNow(date = new Date()) {
@@ -583,7 +674,23 @@
             context.fillText(stamp, x, SIZE.height - geometry.padY / 2);
             context.restore();
           }
-          if (showSelection && state.activeSlot !== null && state.slots[state.activeSlot].image) {
+          if (showSelection && state.previewSwap) {
+            geometry.cells.forEach((cell, index) => {
+              if (!state.slots[index].image) return;
+              context.save();
+              if (index === state.previewSwap.source) {
+                context.fillStyle = "rgba(232,104,68,.22)";
+                context.fillRect(cell.x, cell.y, cell.width, cell.height);
+                context.lineWidth = 12;
+                context.strokeStyle = "#e86844";
+              } else {
+                context.lineWidth = 5;
+                context.strokeStyle = "rgba(255,255,255,.82)";
+              }
+              context.strokeRect(cell.x + 5, cell.y + 5, cell.width - 10, cell.height - 10);
+              context.restore();
+            });
+          } else if (showSelection && state.activeSlot !== null && state.slots[state.activeSlot].image) {
             const cell = geometry.cells[state.activeSlot];
             context.save();
             context.lineWidth = 8;
@@ -774,11 +881,55 @@
         function slotAt(point) {
           return layout().cells.findIndex((cell) => point.x >= cell.x && point.x <= cell.x + cell.width && point.y >= cell.y && point.y <= cell.y + cell.height);
         }
+
+        function clearPreviewTouch(pointerId) {
+          const touch = state.previewTouch;
+          if (!touch || (pointerId !== undefined && touch.pointerId !== pointerId)) return;
+          window.clearTimeout(touch.timer);
+          state.previewTouch = null;
+        }
+
+        function exitPreviewSwap() {
+          state.previewSwap = null;
+          els.previewSwapNotice.hidden = true;
+          refreshCanvas();
+        }
+
+        function enterPreviewSwap(source) {
+          clearPreviewTouch();
+          state.isDragging = false;
+          state.drag = null;
+          canvas.classList.remove("is-dragging");
+          state.previewSwap = { source };
+          els.previewSwapNotice.hidden = false;
+          refreshCanvas();
+        }
+
+        function beginCropDrag(event, index, point) {
+          if (!state.slots[index].image) return;
+          state.isDragging = true;
+          state.drag = { pointerId: event.pointerId, x: point.x, y: point.y, offsetX: state.slots[index].offsetX, offsetY: state.slots[index].offsetY };
+          canvas.classList.add("is-dragging");
+        }
       
         function startDrag(event) {
           if (event.pointerType === "touch") {
             state.touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
+            const point = coordinateForPointer(event);
+            const index = slotAt(point);
+            if (state.previewSwap) {
+              event.preventDefault();
+              if (index === state.previewSwap.source || index < 0 || !state.slots[index].image) {
+                exitPreviewSwap();
+              } else {
+                const source = state.previewSwap.source;
+                swapSlots(source, index);
+                exitPreviewSwap();
+              }
+              return;
+            }
             if (state.touchPoints.size === 2 && state.activeSlot !== null && state.slots[state.activeSlot].image) {
+              clearPreviewTouch();
               const points = Array.from(state.touchPoints.entries());
               const startDistance = Math.hypot(points[1][1].x - points[0][1].x, points[1][1].y - points[0][1].y);
               if (startDistance > 0) {
@@ -791,6 +942,17 @@
                 return;
               }
             }
+            if (index < 0) return;
+            selectSlot(index);
+            if (!state.slots[index].image) return;
+            event.preventDefault();
+            canvas.setPointerCapture(event.pointerId);
+            const touch = { pointerId: event.pointerId, index, point, startX: event.clientX, startY: event.clientY, timer: null };
+            touch.timer = window.setTimeout(() => {
+              if (state.previewTouch === touch && !state.pinch) enterPreviewSwap(index);
+            }, 450);
+            state.previewTouch = touch;
+            return;
           }
           if (state.pinch) return;
           const point = coordinateForPointer(event);
@@ -800,9 +962,7 @@
           if (!state.slots[index].image) return;
           event.preventDefault();
           canvas.setPointerCapture(event.pointerId);
-          state.isDragging = true;
-          state.drag = { pointerId: event.pointerId, x: point.x, y: point.y, offsetX: state.slots[index].offsetX, offsetY: state.slots[index].offsetY };
-          canvas.classList.add("is-dragging");
+          beginCropDrag(event, index, point);
         }
       
         function moveDrag(event) {
@@ -822,6 +982,13 @@
               event.preventDefault();
               return;
             }
+            const pendingTouch = state.previewTouch;
+            if (pendingTouch?.pointerId === event.pointerId) {
+              const distance = Math.hypot(event.clientX - pendingTouch.startX, event.clientY - pendingTouch.startY);
+              if (distance <= 10) return;
+              clearPreviewTouch(event.pointerId);
+              beginCropDrag(event, pendingTouch.index, pendingTouch.point);
+            }
           }
           if (!state.isDragging || event.pointerId !== state.drag.pointerId || state.activeSlot === null) return;
           const point = coordinateForPointer(event);
@@ -836,6 +1003,7 @@
           if (event.pointerType === "touch") {
             state.touchPoints.delete(event.pointerId);
             if (state.pinch?.ids.has(event.pointerId)) state.pinch = null;
+            clearPreviewTouch(event.pointerId);
           }
           if (!state.isDragging || event.pointerId !== state.drag.pointerId) return;
           state.isDragging = false;
@@ -895,17 +1063,17 @@
             els.gradientControls.hidden = state.frame.mode !== "gradient";
             refreshCanvas();
           }));
+          document.querySelectorAll("[data-gradient-target]").forEach((button) => button.addEventListener("click", () => {
+            state.paletteTarget = button.dataset.gradientTarget;
+            updatePaletteUI();
+          }));
+          els.randomGradient.addEventListener("click", randomizeGradient);
           const frameBindings = [
-            [els.solidColor, "solid"], [els.colorA, "colorA"], [els.colorB, "colorB"], [els.angle, "angle"], [els.stopA, "stopA"], [els.stopB, "stopB"], [els.padding, "padding"], [els.verticalPadding, "verticalPadding"], [els.gap, "gap"], [els.leftTopRatio, "leftTopRatio"], [els.rightTopRatio, "rightTopRatio"],
+            [els.angle, "angle"], [els.stopA, "stopA"], [els.stopB, "stopB"], [els.padding, "padding"], [els.verticalPadding, "verticalPadding"], [els.gap, "gap"], [els.leftTopRatio, "leftTopRatio"], [els.rightTopRatio, "rightTopRatio"],
           ];
           frameBindings.forEach(([input, key]) => input.addEventListener("input", () => {
             state.frame[key] = input.type === "range" ? Number(input.value) : input.value;
-            els.angleValue.textContent = `${state.frame.angle}°`;
-            els.stopAValue.textContent = `${state.frame.stopA}%`;
-            els.stopBValue.textContent = `${state.frame.stopB}%`;
-            els.paddingValue.textContent = `${state.frame.padding} px`;
-            els.verticalPaddingValue.textContent = `${state.frame.verticalPadding} px`;
-            els.gapValue.textContent = `${state.frame.gap} px`;
+            updateFrameOutputs();
             syncBoundaryControls();
             refreshCanvas();
           }));
@@ -921,6 +1089,7 @@
             syncBoundaryControls();
             refreshCanvas();
           });
+          els.cancelPreviewSwap.addEventListener("click", exitPreviewSwap);
           [els.topTitle, els.bottomTitle].forEach((input) => input.addEventListener("input", () => {
             state.title.top = els.topTitle.value;
             state.title.bottom = els.bottomTitle.value;
@@ -971,6 +1140,8 @@
         state.timestamp.date = els.selectedDate.value;
         bindUI();
         applyAspect();
+        updateFrameOutputs();
+        updatePaletteUI();
         syncBoundaryControls();
         updateSlotsUI();
         updateActiveControls();
