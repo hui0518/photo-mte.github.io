@@ -21,25 +21,9 @@
       }
       
       @font-face {
-        font-family: "KimJeongcheolMyoungjo";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302_01@1.0/KimjungchulMyungjo-Light.woff2") format("woff2");
-        font-weight: 300;
-        font-style: normal;
-        font-display: swap;
-      }
-      
-      @font-face {
-        font-family: "KimJeongcheolMyoungjo";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302_01@1.0/KimjungchulMyungjo-Regular.woff2") format("woff2");
-        font-weight: 400;
-        font-style: normal;
-        font-display: swap;
-      }
-      
-      @font-face {
-        font-family: "KimJeongcheolMyoungjo";
-        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2302_01@1.0/KimjungchulMyungjo-Bold.woff2") format("woff2");
-        font-weight: 700;
+        font-family: "OngleipParkDahyeon";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/2411-3@1.0/Ownglyph_ParkDaHyun.woff2") format("woff2");
+        font-weight: normal;
         font-style: normal;
         font-display: swap;
       }
@@ -108,7 +92,6 @@
       input[type="text"], input[type="date"], select { width: 100%; min-height: 43px; margin: 7px 0 15px; padding: .65rem .75rem; border: 1px solid #cbd0cb; border-radius: 7px; color: var(--ink); background: white; outline: none; font-size: .94rem; }
       input[type="text"]:focus, input[type="date"]:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,104,68,.14); }
       input[type="range"] { width: 100%; margin: 10px 0 2px; accent-color: var(--accent); }
-      input[type="color"] { width: 42px; height: 32px; padding: 2px; border: 1px solid #cbd0cb; border-radius: 6px; background: white; cursor: pointer; }
       output { float: right; color: var(--muted); font-size: .72rem; font-weight: 650; }
       
       .primary-upload { display: flex; align-items: baseline; justify-content: space-between; min-height: 46px; padding: .7rem .85rem; border-radius: 7px; background: var(--ink); color: white; cursor: pointer; }
@@ -167,9 +150,13 @@
       .column-split-controls label { font-size: .74rem; }
       .ratio-note { margin: -7px 0 16px; }
       .title-style { margin-top: 2px; align-items: center; }
-      .title-weights { margin-top: -2px; }
-      .title-weights select { min-height: 86px; margin-bottom: 0; font-size: .78rem; }
       .title-style > label:not(.color-field) { font-size: .74rem; }
+      .symbol-copy { margin-top: 18px; padding-top: 16px; border-top: 1px dashed #d2d5d0; }
+      .symbol-copy-title { display: block; margin: 0 0 9px; color: #303534; font-size: .78rem; font-weight: 730; letter-spacing: .01em; }
+      .symbol-copy-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+      .symbol-copy-button { min-width: 42px; min-height: 38px; padding: .3rem .55rem; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; font-size: 1.15rem; line-height: 1; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+      .symbol-copy-button:hover, .symbol-copy-button:focus-visible { border-color: var(--accent); color: var(--accent-dark); }
+      .symbol-copy-status { min-height: 1.2em; margin: 8px 0 0; color: var(--muted); font-size: .72rem; font-weight: 650; }
       .switch-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
       .switch-row input { width: 38px; height: 21px; accent-color: var(--accent); }
       .timestamp-toggle { display: inline-flex; align-items: center; margin-top: 5px; }
@@ -313,24 +300,20 @@
           <input id="topTitle" type="text" maxlength="54" placeholder="예: MONO MANSION" />
           <label for="bottomTitle">하단 중앙 제목</label>
           <input id="bottomTitle" type="text" maxlength="54" placeholder="예: SEPTEMBER DAYS" />
-          <div class="two-column title-weights">
-            <label for="topTitleWeight">상단 제목 굵기
-              <select id="topTitleWeight">
-                <option value="300">300 · Light</option>
-                <option value="400" selected>400 · Regular</option>
-                <option value="700">700 · Bold</option>
-              </select>
-            </label>
-            <label for="bottomTitleWeight">하단 제목 굵기
-              <select id="bottomTitleWeight">
-                <option value="300">300 · Light</option>
-                <option value="400" selected>400 · Regular</option>
-                <option value="700">700 · Bold</option>
-              </select>
-            </label>
-          </div>
           <div class="title-style">
-            <label class="color-field" for="titleColor">글자색<input id="titleColor" type="color" value="#151515" /></label>
+            <span class="palette-label">글자색</span>
+            <div id="titlePalette" class="frame-palette" role="group" aria-label="제목 글자색 팔레트"></div>
+          </div>
+          <div class="symbol-copy" aria-label="기호 복사">
+            <span class="symbol-copy-title">기호를 눌러 복사</span>
+            <div class="symbol-copy-buttons">
+              <button class="symbol-copy-button" type="button" data-symbol="♤" aria-label="♤ 복사">♤</button>
+              <button class="symbol-copy-button" type="button" data-symbol="♧" aria-label="♧ 복사">♧</button>
+              <button class="symbol-copy-button" type="button" data-symbol="†" aria-label="† 복사">†</button>
+              <button class="symbol-copy-button" type="button" data-symbol="£" aria-label="£ 복사">£</button>
+              <button class="symbol-copy-button" type="button" data-symbol="¢" aria-label="¢ 복사">¢</button>
+            </div>
+            <p id="symbolCopyStatus" class="symbol-copy-status" role="status" aria-live="polite"></p>
           </div>
         </section>
 
@@ -393,7 +376,7 @@
           aspect: "twoThree",
           slots: Array.from({ length: 4 }, () => ({ image: null, name: "", scale: 1, offsetX: 0, offsetY: 0 })),
           frame: { mode: "solid", solid: "#F8F6F1", colorA: "#F1C7BE", colorB: "#B5D7E7", stopA: 0, stopB: 100, angle: 135, padding: 50, verticalPadding: 50, gap: 16, leftTopRatio: 50, rightTopRatio: 50 },
-          title: { top: "", bottom: "", topWeight: 400, bottomWeight: 400, color: "#151515", size: 52 },
+          title: { top: "", bottom: "", color: "#2E3133", size: 52 },
           timestamp: { enabled: true, mode: "now", date: "", position: "right" },
         };
       
@@ -404,10 +387,11 @@
           solidPalette: $("#solidPalette"), gradientPalette: $("#gradientPalette"), randomGradient: $("#randomGradient"), angle: $("#gradientAngle"), angleValue: $("#angleValue"),
           stopA: $("#gradientStopA"), stopB: $("#gradientStopB"), stopAValue: $("#stopAValue"), stopBValue: $("#stopBValue"),
           padding: $("#framePadding"), verticalPadding: $("#verticalPadding"), gap: $("#gridGap"), leftTopRatio: $("#leftTopRatio"), rightTopRatio: $("#rightTopRatio"), paddingValue: $("#paddingValue"), verticalPaddingValue: $("#verticalPaddingValue"), gapValue: $("#gapValue"), leftTopRatioValue: $("#leftTopRatioValue"), rightTopRatioValue: $("#rightTopRatioValue"),
-          topTitle: $("#topTitle"), bottomTitle: $("#bottomTitle"), topTitleWeight: $("#topTitleWeight"), bottomTitleWeight: $("#bottomTitleWeight"), titleColor: $("#titleColor"), titleSize: $("#titleSize"), titleSizeValue: $("#titleSizeValue"),
+          topTitle: $("#topTitle"), bottomTitle: $("#bottomTitle"), titlePalette: $("#titlePalette"), titleSize: $("#titleSize"), titleSizeValue: $("#titleSizeValue"), symbolCopyStatus: $("#symbolCopyStatus"),
           timestampEnabled: $("#timestampEnabled"), timestampControls: $("#timestampControls"), selectedDate: $("#selectedDate"), dateField: $("#dateField"),
           download: $("#downloadButton"), aspectRatio: $("#aspectRatio"), canvasCaption: $("#canvasCaption"), canvasWrap: $(".canvas-wrap"), canvasStage: $("#canvasStage"), previewLeftHandle: $("#previewLeftHandle"), previewRightHandle: $("#previewRightHandle"), previewSwapNotice: $("#previewSwapNotice"), previewSlotUpload: $("#previewSlotUpload"), previewReplacePhoto: $("#previewReplacePhoto"), previewRemovePhoto: $("#previewRemovePhoto"), cancelPreviewSwap: $("#cancelPreviewSwap"), resetBoundaries: $("#resetBoundaries"), previousCard: $("#previousCard"), nextCard: $("#nextCard"), cardPosition: $("#cardPosition"),
         };
+        let symbolCopyFeedbackTimer;
       
         function dateForInput(date = new Date()) {
           const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -511,6 +495,11 @@
           });
           buildPalette(els.gradientPalette, state.frame[state.paletteTarget], (color) => {
             state.frame[state.paletteTarget] = color;
+            updatePaletteUI();
+            refreshCanvas();
+          });
+          buildPalette(els.titlePalette, state.title.color, (color) => {
+            state.title.color = color;
             updatePaletteUI();
             refreshCanvas();
           });
@@ -629,22 +618,22 @@
           context.restore();
         }
       
-        function fitText(context, text, maxWidth, initialSize, weight) {
+        function fitText(context, text, maxWidth, initialSize) {
           let size = initialSize;
-          context.font = `${weight} ${size}px KimJeongcheolMyoungjo, Georgia, 'Times New Roman', serif`;
+          context.font = `normal ${size}px OngleipParkDahyeon, Georgia, 'Times New Roman', serif`;
           while (context.measureText(text).width > maxWidth && size > 22) {
             size -= 1;
-            context.font = `${weight} ${size}px KimJeongcheolMyoungjo, Georgia, 'Times New Roman', serif`;
+            context.font = `normal ${size}px OngleipParkDahyeon, Georgia, 'Times New Roman', serif`;
           }
         }
       
-        function drawTitle(context, text, y, weight) {
+        function drawTitle(context, text, y) {
           if (!text.trim()) return;
           context.save();
           context.fillStyle = state.title.color;
           context.textAlign = "center";
           context.textBaseline = "middle";
-          fitText(context, text.trim(), SIZE.width - state.frame.padding * 3, state.title.size, weight);
+          fitText(context, text.trim(), SIZE.width - state.frame.padding * 3, state.title.size);
           context.fillText(text.trim(), SIZE.width / 2, y);
           context.restore();
         }
@@ -663,8 +652,8 @@
           geometry.cells.forEach((cell, index) => drawImage(context, state.slots[index], cell));
           // Each title sits at the geometric centre of its full top/bottom frame area,
           // rather than being centred only in the title band beside the photo grid.
-          drawTitle(context, state.title.top, (geometry.padY + geometry.topBand) / 2, state.title.topWeight);
-          drawTitle(context, state.title.bottom, SIZE.height - (geometry.padY + geometry.bottomBand) / 2, state.title.bottomWeight);
+          drawTitle(context, state.title.top, (geometry.padY + geometry.topBand) / 2);
+          drawTitle(context, state.title.bottom, SIZE.height - (geometry.padY + geometry.bottomBand) / 2);
           const stamp = stampText(now);
           if (stamp) {
             context.save();
@@ -693,21 +682,13 @@
               context.strokeRect(cell.x + 5, cell.y + 5, cell.width - 10, cell.height - 10);
               context.restore();
             });
-          } else if (showSelection && state.activeSlot !== null && state.slots[state.activeSlot].image) {
-            const cell = geometry.cells[state.activeSlot];
-            context.save();
-            context.lineWidth = 8;
-            context.strokeStyle = "#e86844";
-            context.strokeRect(cell.x + 4, cell.y + 4, cell.width - 8, cell.height - 8);
-            context.restore();
           }
         }
       
         function refreshCanvas() {
           render(ctx, true);
           positionPreviewHandles();
-          const active = state.activeSlot !== null && state.slots[state.activeSlot].image;
-          canvas.classList.toggle("is-draggable", Boolean(active));
+          canvas.classList.toggle("is-draggable", Boolean(state.previewSwap));
         }
       
         function updateSlotsUI() {
@@ -803,9 +784,10 @@
         }
 
         function enterPreviewSwap(source) {
-          clearPreviewTouch();
+          if (state.previewTouch) window.clearTimeout(state.previewTouch.timer);
           state.isDragging = false;
           state.drag = null;
+          state.activeSlot = source;
           canvas.classList.remove("is-dragging");
           state.previewSwap = { source };
           els.previewSwapNotice.hidden = false;
@@ -818,24 +800,34 @@
           state.drag = { pointerId: event.pointerId, x: point.x, y: point.y, offsetX: state.slots[index].offsetX, offsetY: state.slots[index].offsetY };
           canvas.classList.add("is-dragging");
         }
+
+        function armPreviewLongPress(event, index, point) {
+          event.preventDefault();
+          canvas.setPointerCapture(event.pointerId);
+          clearPreviewTouch();
+          const touch = { pointerId: event.pointerId, index, point, startX: event.clientX, startY: event.clientY, timer: null };
+          touch.timer = window.setTimeout(() => {
+            if (state.previewTouch === touch && !state.pinch) enterPreviewSwap(index);
+          }, 450);
+          state.previewTouch = touch;
+        }
+
+        function armPreviewEdit(event, index, point) {
+          event.preventDefault();
+          canvas.setPointerCapture(event.pointerId);
+          clearPreviewTouch();
+          state.previewTouch = { pointerId: event.pointerId, index, point, startX: event.clientX, startY: event.clientY, timer: null };
+        }
       
         function startDrag(event) {
           if (event.pointerType === "touch") {
             state.touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
-            const point = coordinateForPointer(event);
-            const index = slotAt(point);
-            if (state.previewSwap) {
-              event.preventDefault();
-              if (index === state.previewSwap.source || index < 0 || !state.slots[index].image) {
-                exitPreviewSwap();
-              } else {
-                const source = state.previewSwap.source;
-                swapSlots(source, index);
-                exitPreviewSwap();
-              }
-              return;
-            }
-            if (state.touchPoints.size === 2 && state.activeSlot !== null && state.slots[state.activeSlot].image) {
+          }
+          const point = coordinateForPointer(event);
+          const index = slotAt(point);
+          if (state.previewSwap) {
+            const source = state.previewSwap.source;
+            if (event.pointerType === "touch" && state.touchPoints.size === 2 && state.slots[source].image) {
               clearPreviewTouch();
               const points = Array.from(state.touchPoints.entries());
               const startDistance = Math.hypot(points[1][1].x - points[0][1].x, points[1][1].y - points[0][1].y);
@@ -843,57 +835,54 @@
                 state.isDragging = false;
                 state.drag = null;
                 canvas.classList.remove("is-dragging");
-                state.pinch = { ids: new Set(points.map(([id]) => id)), startDistance, startScale: state.slots[state.activeSlot].scale };
+                state.pinch = { ids: new Set(points.map(([id]) => id)), startDistance, startScale: state.slots[source].scale };
                 canvas.setPointerCapture(event.pointerId);
                 event.preventDefault();
                 return;
               }
             }
-            if (index < 0) return;
-            selectSlot(index);
-            if (!state.slots[index].image) return;
+            if (index === source && state.slots[source].image) {
+              armPreviewEdit(event, source, point);
+              return;
+            }
             event.preventDefault();
-            canvas.setPointerCapture(event.pointerId);
-            const touch = { pointerId: event.pointerId, index, point, startX: event.clientX, startY: event.clientY, timer: null };
-            touch.timer = window.setTimeout(() => {
-              if (state.previewTouch === touch && !state.pinch) enterPreviewSwap(index);
-            }, 450);
-            state.previewTouch = touch;
+            if (index >= 0 && state.slots[index].image) swapSlots(source, index);
+            exitPreviewSwap();
             return;
           }
-          if (state.pinch) return;
-          const point = coordinateForPointer(event);
-          const index = slotAt(point);
+          if (event.pointerType === "touch" && state.touchPoints.size > 1) {
+            clearPreviewTouch();
+            return;
+          }
           if (index < 0) return;
           selectSlot(index);
           if (!state.slots[index].image) return;
-          event.preventDefault();
-          canvas.setPointerCapture(event.pointerId);
-          beginCropDrag(event, index, point);
+          armPreviewLongPress(event, index, point);
         }
       
         function moveDrag(event) {
           if (event.pointerType === "touch" && state.touchPoints.has(event.pointerId)) {
             state.touchPoints.set(event.pointerId, { x: event.clientX, y: event.clientY });
-            if (state.pinch?.ids.has(event.pointerId) && state.activeSlot !== null) {
+            if (state.pinch?.ids.has(event.pointerId) && state.previewSwap) {
               const points = Array.from(state.touchPoints.entries()).filter(([id]) => state.pinch.ids.has(id));
               if (points.length === 2) {
                 const currentDistance = Math.hypot(points[1][1].x - points[0][1].x, points[1][1].y - points[0][1].y);
-                const slot = state.slots[state.activeSlot];
+                const slot = state.slots[state.previewSwap.source];
                 slot.scale = Math.max(1, Math.min(3, state.pinch.startScale * currentDistance / state.pinch.startDistance));
-                clampSlot(slot, layout().cells[state.activeSlot]);
+                clampSlot(slot, layout().cells[state.previewSwap.source]);
                 refreshCanvas();
               }
               event.preventDefault();
               return;
             }
-            const pendingTouch = state.previewTouch;
-            if (pendingTouch?.pointerId === event.pointerId) {
-              const distance = Math.hypot(event.clientX - pendingTouch.startX, event.clientY - pendingTouch.startY);
-              if (distance <= 10) return;
-              clearPreviewTouch(event.pointerId);
-              beginCropDrag(event, pendingTouch.index, pendingTouch.point);
-            }
+          }
+          const pendingTouch = state.previewTouch;
+          if (pendingTouch?.pointerId === event.pointerId) {
+            const distance = Math.hypot(event.clientX - pendingTouch.startX, event.clientY - pendingTouch.startY);
+            if (distance <= 10) return;
+            clearPreviewTouch(event.pointerId);
+            if (!state.previewSwap) return;
+            beginCropDrag(event, pendingTouch.index, pendingTouch.point);
           }
           if (!state.isDragging || event.pointerId !== state.drag.pointerId || state.activeSlot === null) return;
           const point = coordinateForPointer(event);
@@ -908,8 +897,8 @@
           if (event.pointerType === "touch") {
             state.touchPoints.delete(event.pointerId);
             if (state.pinch?.ids.has(event.pointerId)) state.pinch = null;
-            clearPreviewTouch(event.pointerId);
           }
+          clearPreviewTouch(event.pointerId);
           if (!state.isDragging || event.pointerId !== state.drag.pointerId) return;
           state.isDragging = false;
           state.drag = null;
@@ -945,6 +934,37 @@
           if (!drag || drag.pointerId !== event.pointerId) return;
           drag.handle.classList.remove("is-dragging");
           state.boundaryDrag = null;
+        }
+
+        function fallbackCopyText(text) {
+          const field = document.createElement("textarea");
+          field.value = text;
+          field.setAttribute("readonly", "");
+          field.style.position = "fixed";
+          field.style.opacity = "0";
+          document.body.append(field);
+          field.select();
+          const copied = document.execCommand("copy");
+          field.remove();
+          return copied;
+        }
+
+        async function copySymbol(event) {
+          const symbol = event.currentTarget.dataset.symbol;
+          let copied = false;
+          try {
+            if (navigator.clipboard?.writeText && window.isSecureContext) {
+              await navigator.clipboard.writeText(symbol);
+              copied = true;
+            } else {
+              copied = fallbackCopyText(symbol);
+            }
+          } catch {
+            copied = fallbackCopyText(symbol);
+          }
+          els.symbolCopyStatus.textContent = copied ? `${symbol} 복사됨` : "복사하지 못했어요.";
+          window.clearTimeout(symbolCopyFeedbackTimer);
+          symbolCopyFeedbackTimer = window.setTimeout(() => { els.symbolCopyStatus.textContent = ""; }, 1800);
         }
       
         function bindUI() {
@@ -1004,10 +1024,8 @@
             state.title.bottom = els.bottomTitle.value;
             refreshCanvas();
           }));
-          els.topTitleWeight.addEventListener("change", () => { state.title.topWeight = Number(els.topTitleWeight.value); refreshCanvas(); });
-          els.bottomTitleWeight.addEventListener("change", () => { state.title.bottomWeight = Number(els.bottomTitleWeight.value); refreshCanvas(); });
-          els.titleColor.addEventListener("input", () => { state.title.color = els.titleColor.value; refreshCanvas(); });
           els.titleSize.addEventListener("input", () => { state.title.size = Number(els.titleSize.value); els.titleSizeValue.textContent = `${state.title.size} px`; refreshCanvas(); });
+          document.querySelectorAll("[data-symbol]").forEach((button) => button.addEventListener("click", copySymbol));
           els.timestampEnabled.addEventListener("change", () => { state.timestamp.enabled = els.timestampEnabled.checked; els.timestampControls.hidden = !state.timestamp.enabled; refreshCanvas(); });
           document.querySelectorAll("[data-timestamp-mode]").forEach((button) => button.addEventListener("click", () => {
             state.timestamp.mode = button.dataset.timestampMode;
@@ -1029,11 +1047,22 @@
       
         function downloadPng() {
           if (countImages() !== 4) return;
+          // Open synchronously while the click still has a user gesture, which keeps
+          // mobile Safari from treating the finished PNG as a blocked popup.
+          const imageTab = window.open("about:blank", "_blank");
+          if (imageTab) {
+            imageTab.document.title = "사진 뭉탱이 PNG";
+            imageTab.document.body.textContent = "PNG를 준비하고 있어요…";
+          }
           const downloadedAt = new Date();
           render(exportCtx, false, downloadedAt);
           offscreen.toBlob((blob) => {
             if (!blob) return;
             const url = URL.createObjectURL(blob);
+            if (imageTab) {
+              imageTab.location.replace(url);
+              return;
+            }
             const link = document.createElement("a");
             link.href = url;
             const twoDigits = (value) => String(value).padStart(2, "0");
@@ -1061,11 +1090,7 @@
           refreshCanvas();
         });
         if (document.fonts) {
-          Promise.all([
-            document.fonts.load("300 52px KimJeongcheolMyoungjo"),
-            document.fonts.load("400 52px KimJeongcheolMyoungjo"),
-            document.fonts.load("700 52px KimJeongcheolMyoungjo"),
-          ]).then(refreshCanvas).catch(() => {});
+          document.fonts.load("normal 52px OngleipParkDahyeon").then(refreshCanvas).catch(() => {});
         }
         setInterval(() => { if (state.timestamp.enabled && state.timestamp.mode === "now") refreshCanvas(); }, 30_000);
       })();
